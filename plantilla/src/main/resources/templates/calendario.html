@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html class="h-100" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <th:block th:replace="~{fragments/head :: header}" />
+    <title>Calendario - SyncFlat</title>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <header th:replace="~{fragments/nav.html :: nav}"></header>
+
+    <main class="flex-shrink-0">
+        <div class="container mt-5">
+            <h1 class="mb-4">Calendario</h1>
+
+            <p class="lead">
+                Módulo para coordinar horarios y disponibilidad de los integrantes del piso.
+            </p>
+
+            <p>
+                Permite visualizar la planificación del piso y facilitar la organización
+                de eventos, tareas y ausencias de forma conjunta.
+            </p>
+
+            <hr class="my-4">
+
+            <h2>Funcionalidades</h2>
+            <ul class="mt-3">
+                <li>
+                    <strong>Vista por horas:</strong>
+                    calendario con franjas horarias.
+                </li>
+                <li>
+                    <strong>Vista por integrante:</strong>
+                    consulta de la disponibilidad individual.
+                </li>
+                <li>
+                    <strong>Conflictos:</strong>
+                    detección de solapamientos.
+                </li>
+                <li>
+                    <strong>Sugerencias de huecos:</strong>
+                    búsqueda de momentos comunes disponibles.
+                </li>
+                <li>
+                    <strong>Capas de información:</strong>
+                    visualización conjunta de eventos, tareas y ausencias.
+                </li>
+                <li>
+                    <strong>Integración:</strong>
+                    conexión con otros módulos del sistema.
+                </li>
+            </ul>
+
+            <p class="mt-4">
+                <a th:href="@{/}">← Volver al inicio</a>
+            </p>
+        </div>
+    </main>
+
+    <th:block th:replace="~{fragments/footer.html :: footer}" />
+</body>
+
+</html>

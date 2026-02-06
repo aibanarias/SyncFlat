@@ -3,15 +3,57 @@
 
 <head>
     <th:block th:replace="~{fragments/head :: header}" />
-    <title>IW: Welcome</title>
+    <title>SyncFlat - Gestión integral para pisos compartidos</title>
 </head>
 
 <body class="d-flex flex-column h-100">
     <header th:replace="~{fragments/nav.html :: nav}"></header>
 
     <main class="flex-shrink-0">
-        <div class="container">
-            <h1 class="mt-5">Bienvenid@</h1>
+        <div class="container mt-5">
+            <h1 class="mb-4">Gestión integral para pisos compartidos</h1>
+
+            <p class="lead">
+                Aplicación orientada a personas que comparten piso y necesitan coordinar
+                de forma clara y justa el dinero, la organización doméstica y el tiempo.
+            </p>
+
+            <p>
+                El sistema se estructura en cinco módulos principales, cada uno con
+                funcionalidades específicas pero conectadas entre sí para dar una visión
+                global del estado del piso.
+            </p>
+
+            <hr class="my-4">
+
+            <h2>Módulos</h2>
+            <ul class="mt-3">
+                <li>
+                    <strong>Gastos compartidos:</strong>
+                    control de gastos, reparto y liquidaciones.
+                    <a th:href="@{/modulos/gastos}">ver</a>
+                </li>
+                <li>
+                    <strong>Compra del super:</strong>
+                    organización de compras y reparto flexible.
+                    <a th:href="@{/modulos/compra}">ver</a>
+                </li>
+                <li>
+                    <strong>Home:</strong>
+                    resumen del estado del piso y eventos.
+                    <a th:href="@{/modulos/home}">ver</a>
+                </li>
+                <li>
+                    <strong>Tareas:</strong>
+                    gestión de tareas domésticas y rotaciones.
+                    <a th:href="@{/modulos/tareas}">ver</a>
+                </li>
+                <li>
+                    <strong>Calendario:</strong>
+                    planificación y disponibilidad compartida.
+                    <a th:href="@{/modulos/calendario}">ver</a>
+                </li>
+            </ul>
         </div>
     </main>
 

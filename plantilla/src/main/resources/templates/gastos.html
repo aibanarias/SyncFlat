@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html class="h-100" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <th:block th:replace="~{fragments/head :: header}" />
+    <title>Gastos compartidos - SyncFlat</title>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <header th:replace="~{fragments/nav.html :: nav}"></header>
+
+    <main class="flex-shrink-0">
+        <div class="container mt-5">
+            <h1 class="mb-4">Gastos compartidos</h1>
+
+            <p class="lead">
+                Módulo para gestionar los gastos del piso de forma clara y justa.
+            </p>
+
+            <p>
+                Permite registrar gastos comunes y llevar un control transparente
+                de quién ha pagado y qué importes están pendientes.
+            </p>
+
+            <hr class="my-4">
+
+            <h2>Funcionalidades</h2>
+            <ul class="mt-3">
+                <li>
+                    <strong>Registro de gastos:</strong>
+                    alta de gastos comunes con concepto, importe y participantes.
+                </li>
+                <li>
+                    <strong>Reparto:</strong>
+                    reparto automático o personalizado según los participantes.
+                </li>
+                <li>
+                    <strong>Estado de los gastos:</strong>
+                    seguimiento de gastos pendientes y pagados.
+                </li>
+                <li>
+                    <strong>Recordatorios:</strong>
+                    avisos para pagos pendientes.
+                </li>
+                <li>
+                    <strong>Balance:</strong>
+                    visualización del saldo de cada persona.
+                </li>
+                <li>
+                    <strong>Liquidación:</strong>
+                    cálculo de liquidaciones para cerrar periodos.
+                </li>
+            </ul>
+
+            <p class="mt-4">
+                <a th:href="@{/}">← Volver al inicio</a>
+            </p>
+        </div>
+    </main>
+
+    <th:block th:replace="~{fragments/footer.html :: footer}" />
+</body>
+
+</html>

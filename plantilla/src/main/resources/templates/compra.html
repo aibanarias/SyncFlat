@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html class="h-100" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <th:block th:replace="~{fragments/head :: header}" />
+    <title>Compra del super - SyncFlat</title>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <header th:replace="~{fragments/nav.html :: nav}"></header>
+
+    <main class="flex-shrink-0">
+        <div class="container mt-5">
+            <h1 class="mb-4">Compra del super</h1>
+
+            <p class="lead">
+                Módulo para organizar las compras compartidas del hogar.
+            </p>
+
+            <p>
+                Permite coordinar qué productos se necesitan, registrar las compras
+                realizadas y repartir los gastos de forma flexible entre los integrantes.
+            </p>
+
+            <hr class="my-4">
+
+            <h2>Funcionalidades</h2>
+            <ul class="mt-3">
+                <li>
+                    <strong>Catálogo compartido:</strong>
+                    listado común de productos habituales.
+                </li>
+                <li>
+                    <strong>Lista de la compra:</strong>
+                    creación y gestión de listas compartidas.
+                </li>
+                <li>
+                    <strong>Registro de compras:</strong>
+                    introducción de compras realizadas con información básica.
+                </li>
+                <li>
+                    <strong>Reparto del gasto:</strong>
+                    asignación flexible de gastos por productos o personas.
+                </li>
+                <li>
+                    <strong>Historial:</strong>
+                    consulta de compras anteriores.
+                </li>
+                <li>
+                    <strong>Estadísticas:</strong>
+                    análisis simple de patrones de gasto.
+                </li>
+            </ul>
+
+            <p class="mt-4">
+                <a th:href="@{/}">← Volver al inicio</a>
+            </p>
+        </div>
+    </main>
+
+    <th:block th:replace="~{fragments/footer.html :: footer}" />
+</body>
+
+</html>
