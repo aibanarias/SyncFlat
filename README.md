@@ -38,32 +38,31 @@ La aplicación se inicia en **http://localhost:8080**.
 ├── README.md                        # Este fichero
 ├── src/
 │   ├── main/
-│   │   ├── java/es/ucm/fdi/iw/
-│   │   │   ├── controller/
-│   │   │   │   ├── RootController.java      # Endpoints principales
-│   │   │   │   ├── AdminController.java     # Panel de administración
-│   │   │   │   ├── UserController.java      # Gestión de usuarios
-│   │   │   │   └── ApiController.java       # API REST
-│   │   │   ├── model/                       # Entidades JPA
-│   │   │   ├── SecurityConfig.java          # Configuración de seguridad
-│   │   │   ├── LoginSuccessHandler.java     # Handler post-login
-│   │   │   ├── StartupConfig.java           # Configuración inicial
-│   │   │   └── IwApplication.java           # Punto de entrada
-│   │   └── resources/
-│   │       ├── application.properties       # Configuración de la app
-│   │       ├── templates/
-│   │       │   ├── fragments/               # Fragmentos Thymeleaf (head, nav, footer)
-│   │       │   ├── index.html               # Página principal
-│   │       │   ├── login.html               # Formulario de login
-│   │       │   ├── gastos.html, compra.html, home.html, tareas.html, calendario.html
-│   │       │   ├── autores.html             # Info del autor
-│   │       │   └── admin.html, user.html, error.html
-│   │       └── static/
-│   │           ├── css/                     # Estilos (Bootstrap 5.3.3 + custom.css)
-│   │           ├── js/                      # Scripts (Bootstrap, WebSocket, utilidades)
-│   │           └── img/                     # Imágenes (logo, favicon, fotos)
-│   └── test/                                # Tests (JUnit, Karate)
-```
+│      ├── java/es/ucm/fdi/iw/
+│      │   ├── controller/
+│      │   │   ├── RootController.java      # Endpoints principales
+│      │   │   ├── AdminController.java     # Panel de administración
+│      │   │   ├── UserController.java      # Gestión de usuarios
+│      │   │   └── ApiController.java       # API REST
+│      │   ├── model/                       # Entidades JPA
+│      │   ├── SecurityConfig.java          # Configuración de seguridad
+│      │   ├── LoginSuccessHandler.java     # Handler post-login
+│      │   ├── StartupConfig.java           # Configuración inicial
+│      │   └── IwApplication.java           # Punto de entrada
+│      └── resources/
+│          ├── application.properties       # Configuración de la app
+│          ├── templates/
+│          │   ├── fragments/               # Fragmentos Thymeleaf (head, nav, footer)
+│          │   ├── index.html               # Página principal
+│          │   ├── login.html               # Formulario de login
+│          │   ├── gastos.html, compra.html, home.html, tareas.html, calendario.html
+│          │   ├── autores.html             # Info del autor
+│          │   └── admin.html, user.html, error.html
+│          └── static/
+│              ├── css/                     # Estilos (Bootstrap 5.3.3 + custom.css)
+│              ├── js/                      # Scripts (Bootstrap, WebSocket, utilidades)
+│              └── img/                     # Imágenes (logo, favicon, fotos)
+
 
 ## Login y roles (debug)
 
@@ -92,37 +91,3 @@ Tras hacer login, la navbar muestra los enlaces a todos los módulos. El enlace 
 | `GET /autores` | autores.html | Requiere login (USER) |
 | `GET /admin/` | admin.html | Requiere ADMIN |
 | `GET /user/{id}` | user.html | Requiere login (USER) |
-
-## Notas de escalabilidad
-
-### Arquitectura propuesta para crecer
-
-```
-controller/     → Recibe peticiones HTTP, delega en servicios
-service/        → Lógica de negocio (a crear cuando se implementen funcionalidades reales)
-repository/     → Acceso a datos JPA (Spring Data)
-model/          → Entidades de dominio
-dto/            → Objetos de transferencia (a crear)
-```
-
-### Módulos futuros (roadmap)
-
-1. **Persistencia de gastos**: entidad `Gasto` con JPA, CRUD completo, reparto automático.
-2. **Lista de la compra**: entidad `ItemCompra`, listas compartidas en tiempo real (WebSocket).
-3. **Tareas con rotación**: entidad `Tarea`, asignación automática por turnos, historial.
-4. **Calendario compartido**: entidad `Evento`, vistas por semana/mes, detección de conflictos.
-5. **Notificaciones**: sistema de avisos push vía WebSocket (ya preparado en la plantilla).
-
-### Consideraciones de seguridad
-
-- Validación de entrada en todos los formularios (Bean Validation / `@Valid`).
-- CSRF habilitado (excepto API REST).
-- Autorización por roles (`@Secured`, `@PreAuthorize`).
-- Sanitización de datos para evitar XSS.
-
-### Separación de responsabilidades
-
-- **Templates**: solo presentación, usando fragmentos reutilizables (`head`, `nav`, `footer`).
-- **Controllers**: delegar siempre en servicios, no contener lógica de negocio.
-- **Servicios**: encapsular lógica, transacciones y validaciones.
-- **Repositorios**: solo acceso a datos, sin lógica.
