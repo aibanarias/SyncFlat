@@ -1,30 +1,128 @@
-# iw
+# SyncFlat — Gestión integral para pisos compartidos
 
-Material para la asignatura de Ingeniería Web, edición 2022-23, de la Facultad de Informática UCM
+## ¿Qué es SyncFlat?
 
-## Contenido
+SyncFlat es una aplicación web orientada a personas que **comparten piso** y necesitan coordinar de forma clara y justa el dinero, la organización doméstica y el tiempo. El sistema se estructura en módulos independientes pero conectados entre sí.
 
-* en [/plantilla](https://github.com/manuel-freire/iw/tree/main/plantilla) está la plantilla recomendada para los proyectos de este año. Sobre un proyecto "desde cero", por ejemplo el visto en el tutorial, añade:
+## Funcionalidades actuales (entrega)
 
-    - Perfiles para mantener una BD H2 en memoria o en disco
-    - Seguridad con múltiples roles definidos, y persistiendo usuarios vía BD
-    - Controladores con métodos para
-        * crear usuarios programáticamente
-        * subir y bajar ficheros de forma segura
-    - Una clase auxiliar para configurar a dónde se suben los ficheros que se suben
-    - WebSockets con STOMP funcionando
-    - Demostraciones de AJAX en funcionamiento para consultar APIs externas y gestionar imágenes
+- **Página de inicio** (`/`): presentación del proyecto y enlaces a los módulos.
+- **Módulo de Gastos** (`/modulos/gastos`): descripción de la funcionalidad de control de gastos compartidos.
+- **Módulo de Compra** (`/modulos/compra`): organización de compras y reparto flexible.
+- **Módulo Home** (`/modulos/home`): panel de control centralizado del piso.
+- **Módulo de Tareas** (`/modulos/tareas`): gestión de tareas domésticas con **demo JavaScript interactiva** (botón que añade ítems a una lista sin backend).
+- **Módulo de Calendario** (`/modulos/calendario`): planificación y disponibilidad compartida.
+- **Autores** (`/autores`): información sobre el autor del proyecto.
+- **Login y seguridad**: autenticación con formulario; botones de debug para login rápido (usuarios A y B).
+- **Administración** (`/admin/`): visible solo para usuarios con rol ADMIN.
 
-* en [/doc/]([https://github.com/manuel-freire/iw/tree/main/doc) tienes las transparencias, en Markdown. Puedes leerlas tal cual están (es texto, y además GitHub tiene un intérprete embebido), o convertirlas a PDF u otro formato usando, por ejemplo, [Pandoc](https://pandoc.org). Tengo un [script](https://github.com/manuel-freire/fdi-utils) en python llamado `markdown-to-beamer` que es el que uso para generar las transparencias que subo a Campus Virtual y uso en clase. Muchas transparencias no están **actualizadas la última edicion**; en general, las actualizo poco antes de las clases correspondientes.
+## Cómo ejecutar
 
-* (**desactualizado**) en [/demo](https://github.com/manuel-freire/iw/tree/main/demo) está el proyecto de demostración explicado en el [tutorial](https://github.com/manuel-freire/iw/blob/main/doc/05-tutorial.md)
+### Requisitos
+- **Java 21** (JDK)
+- **Maven 3.8+** (o usar el wrapper `mvnw` si está disponible)
 
-## Historia
+### Comandos
 
-Puedes consultar también plantillas de años pasados:
+```bash
+# Desde la raíz del repositorio
+mvn spring-boot:run
+```
 
-   - En el [2020-21](https://github.com/manuel-freire/iw/tree/version-del-curso-2020-21), usábamos Eclipse STS en lugar de VS Code como entorno recomendado
-   - En el [2019-20](https://github.com/manuel-freire/iw/tree/version-del-curso-2019-20), usábamos HyperSQL en lugar de H2. Las clases de modelo eran más verbosas, porque las anotaciones de entidad estaban en los métodos (y no en los atributos), y no usábamos Lombok.
-   - En el [2018-19](https://github.com/manuel-freire/iw1819), los websockets no eran obligatorios, y no usaban todavía STOMP
-   - Cursos [2016-17 y 2017-18](https://github.com/manuel-freire/iw-1718)
-   - Curso [2015-16](https://github.com/manuel-freire/iw-1516), utilizando por primera vez Spring Boot
+La aplicación se inicia en **http://localhost:8080**.
+
+## Estructura del proyecto
+
+```
+├── pom.xml                          # Configuración Maven
+├── README.md                        # Este fichero
+├── src/
+│   ├── main/
+│   │   ├── java/es/ucm/fdi/iw/
+│   │   │   ├── controller/
+│   │   │   │   ├── RootController.java      # Endpoints principales
+│   │   │   │   ├── AdminController.java     # Panel de administración
+│   │   │   │   ├── UserController.java      # Gestión de usuarios
+│   │   │   │   └── ApiController.java       # API REST
+│   │   │   ├── model/                       # Entidades JPA
+│   │   │   ├── SecurityConfig.java          # Configuración de seguridad
+│   │   │   ├── LoginSuccessHandler.java     # Handler post-login
+│   │   │   ├── StartupConfig.java           # Configuración inicial
+│   │   │   └── IwApplication.java           # Punto de entrada
+│   │   └── resources/
+│   │       ├── application.properties       # Configuración de la app
+│   │       ├── templates/
+│   │       │   ├── fragments/               # Fragmentos Thymeleaf (head, nav, footer)
+│   │       │   ├── index.html               # Página principal
+│   │       │   ├── login.html               # Formulario de login
+│   │       │   ├── gastos.html, compra.html, home.html, tareas.html, calendario.html
+│   │       │   ├── autores.html             # Info del autor
+│   │       │   └── admin.html, user.html, error.html
+│   │       └── static/
+│   │           ├── css/                     # Estilos (Bootstrap 5.3.3 + custom.css)
+│   │           ├── js/                      # Scripts (Bootstrap, WebSocket, utilidades)
+│   │           └── img/                     # Imágenes (logo, favicon, fotos)
+│   └── test/                                # Tests (JUnit, Karate)
+```
+
+## Login y roles (debug)
+
+La aplicación incluye **botones de login rápido** (visibles solo en modo debug):
+
+| Botón | Usuario | Contraseña | Roles |
+|-------|---------|------------|-------|
+| **a** | `a` | `aa` | USER, ADMIN |
+| **b** | `b` | `aa` | USER |
+
+Estos botones aparecen en la esquina superior derecha de la barra de navegación cuando no hay sesión activa.
+
+Tras hacer login, la navbar muestra los enlaces a todos los módulos. El enlace **Administrar** solo es visible para usuarios con rol ADMIN.
+
+## Rutas y vistas
+
+| Ruta | Vista | Acceso |
+|------|-------|--------|
+| `GET /` | index.html | Público |
+| `GET /login` | login.html | Público |
+| `GET /modulos/gastos` | gastos.html | Requiere login (USER) |
+| `GET /modulos/compra` | compra.html | Requiere login (USER) |
+| `GET /modulos/home` | home.html | Requiere login (USER) |
+| `GET /modulos/tareas` | tareas.html | Requiere login (USER) |
+| `GET /modulos/calendario` | calendario.html | Requiere login (USER) |
+| `GET /autores` | autores.html | Requiere login (USER) |
+| `GET /admin/` | admin.html | Requiere ADMIN |
+| `GET /user/{id}` | user.html | Requiere login (USER) |
+
+## Notas de escalabilidad
+
+### Arquitectura propuesta para crecer
+
+```
+controller/     → Recibe peticiones HTTP, delega en servicios
+service/        → Lógica de negocio (a crear cuando se implementen funcionalidades reales)
+repository/     → Acceso a datos JPA (Spring Data)
+model/          → Entidades de dominio
+dto/            → Objetos de transferencia (a crear)
+```
+
+### Módulos futuros (roadmap)
+
+1. **Persistencia de gastos**: entidad `Gasto` con JPA, CRUD completo, reparto automático.
+2. **Lista de la compra**: entidad `ItemCompra`, listas compartidas en tiempo real (WebSocket).
+3. **Tareas con rotación**: entidad `Tarea`, asignación automática por turnos, historial.
+4. **Calendario compartido**: entidad `Evento`, vistas por semana/mes, detección de conflictos.
+5. **Notificaciones**: sistema de avisos push vía WebSocket (ya preparado en la plantilla).
+
+### Consideraciones de seguridad
+
+- Validación de entrada en todos los formularios (Bean Validation / `@Valid`).
+- CSRF habilitado (excepto API REST).
+- Autorización por roles (`@Secured`, `@PreAuthorize`).
+- Sanitización de datos para evitar XSS.
+
+### Separación de responsabilidades
+
+- **Templates**: solo presentación, usando fragmentos reutilizables (`head`, `nav`, `footer`).
+- **Controllers**: delegar siempre en servicios, no contener lógica de negocio.
+- **Servicios**: encapsular lógica, transacciones y validaciones.
+- **Repositorios**: solo acceso a datos, sin lógica.

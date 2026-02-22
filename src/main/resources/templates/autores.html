@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html class="h-100" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <th:block th:replace="~{fragments/head :: header}" />
+    <title>Autores - SyncFlat</title>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <header th:replace="~{fragments/nav.html :: nav}"></header>
+
+    <main class="flex-shrink-0">
+        <div class="container mt-5">
+            <h1 class="mb-4">Autores</h1>
+
+            <p class="lead">
+                Persona responsable del desarrollo del proyecto.
+            </p>
+
+            <hr class="my-4">
+
+            <div class="mt-3">
+                <img th:src="@{/img/autor1.jpeg}" src="/img/autor1.jpeg" alt="Iván Arias García"
+                    style="width: 120px; height: 120px; object-fit: cover;">
+
+                <p class="mt-2">
+                    <strong>Iván Arias García</strong>
+                </p>
+            </div>
+
+            <p class="mt-4">
+                <a th:href="@{/}">← Volver al inicio</a>
+            </p>
+        </div>
+    </main>
+
+    <th:block th:replace="~{fragments/footer.html :: footer}" />
+</body>
+
+</html>

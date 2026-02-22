@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html class="h-100" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <th:block th:replace="~{fragments/head :: header}" />
+    <title>Home - SyncFlat</title>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <header th:replace="~{fragments/nav.html :: nav}"></header>
+
+    <main class="flex-shrink-0">
+        <div class="container mt-5">
+            <h1 class="mb-4">Home</h1>
+
+            <p class="lead">
+                Panel de control centralizado del piso.
+            </p>
+
+            <p>
+                Desde esta vista se ofrece una visión general del estado del piso,
+                facilitando la coordinación diaria entre los integrantes.
+            </p>
+
+            <hr class="my-4">
+
+            <h2>Funcionalidades</h2>
+            <ul class="mt-3">
+                <li>
+                    <strong>Resumen general:</strong>
+                    visión rápida del estado del piso.
+                </li>
+                <li>
+                    <strong>Calendario resumido:</strong>
+                    próximos eventos y tareas relevantes.
+                </li>
+                <li>
+                    <strong>Eventos internos:</strong>
+                    creación y gestión de actividades del piso.
+                </li>
+                <li>
+                    <strong>Confirmación:</strong>
+                    confirmación de asistencia a eventos.
+                </li>
+                <li>
+                    <strong>Presencia y ausencias:</strong>
+                    gestión de disponibilidad.
+                </li>
+                <li>
+                    <strong>Alertas:</strong>
+                    avisos importantes para los integrantes.
+                </li>
+            </ul>
+
+            <p class="mt-4">
+                <a th:href="@{/}">← Volver al inicio</a>
+            </p>
+        </div>
+    </main>
+
+    <th:block th:replace="~{fragments/footer.html :: footer}" />
+</body>
+
+</html>

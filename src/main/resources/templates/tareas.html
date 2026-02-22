@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html class="h-100" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <th:block th:replace="~{fragments/head :: header}" />
+    <title>Tareas - SyncFlat</title>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <header th:replace="~{fragments/nav.html :: nav}"></header>
+
+    <main class="flex-shrink-0">
+        <div class="container mt-5">
+            <h1 class="mb-4">Tareas</h1>
+
+            <p class="lead">
+                Módulo para organizar y repartir las tareas domésticas del piso.
+            </p>
+
+            <p>
+                Permite definir tareas, asignarlas entre los integrantes y hacer
+                un seguimiento básico de su cumplimiento.
+            </p>
+
+            <hr class="my-4">
+
+            <h2>Funcionalidades</h2>
+            <ul class="mt-3">
+                <li>
+                    <strong>Tareas recurrentes y puntuales:</strong>
+                    definición de tareas periódicas o únicas.
+                </li>
+                <li>
+                    <strong>Asignación y rotación:</strong>
+                    reparto equitativo mediante turnos.
+                </li>
+                <li>
+                    <strong>Fechas límite:</strong>
+                    establecimiento de plazos para cada tarea.
+                </li>
+                <li>
+                    <strong>Validación:</strong>
+                    confirmación por parte de los compañeros.
+                </li>
+                <li>
+                    <strong>Historial:</strong>
+                    consulta de tareas realizadas.
+                </li>
+                <li>
+                    <strong>Recordatorios:</strong>
+                    avisos antes de los vencimientos.
+                </li>
+                <li>
+                    <strong>Seguimiento:</strong>
+                    visión general del cumplimiento.
+                </li>
+            </ul>
+
+            <hr class="my-4">
+
+            <h2>Demo JavaScript</h2>
+            <p>Ejemplo interactivo: pulsa el botón para añadir tareas a la lista (sin backend).</p>
+            <button id="btn-add-task" class="btn btn-primary mb-3" type="button">Añadir tarea (demo)</button>
+            <ul id="demo-list" class="list-group mb-4"></ul>
+
+            <script>
+                document.getElementById('btn-add-task').addEventListener('click', function () {
+                    const list = document.getElementById('demo-list');
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    const now = new Date();
+                    li.textContent = 'Tarea #' + (list.children.length + 1) + ' — añadida a las ' + now.toLocaleTimeString();
+                    list.appendChild(li);
+                });
+            </script>
+
+            <p class="mt-4">
+                <a th:href="@{/}">← Volver al inicio</a>
+            </p>
+        </div>
+    </main>
+
+    <th:block th:replace="~{fragments/footer.html :: footer}" />
+</body>
+
+</html>
