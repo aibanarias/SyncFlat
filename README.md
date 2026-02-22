@@ -1,47 +1,128 @@
-# Aplicación de Plantilla de IW
+# SyncFlat — Gestión integral para pisos compartidos
 
-Debes buscar todos los lugares donde aparece la palabra "plantilla" (incluido este párrafo) y reemplazar las ocurrencias, y el contexto circundante, por valores que tengan sentido en tu aplicación. Por ejemplo, este párrafo deberías eliminarlo de tu proyecto.
+## ¿Qué es SyncFlat?
 
-## Contenido de la plantilla
+SyncFlat es una aplicación web orientada a personas que **comparten piso** y necesitan coordinar de forma clara y justa el dinero, la organización doméstica y el tiempo. El sistema se estructura en módulos independientes pero conectados entre sí.
 
-- en [src/main/java/es/ucm/fdi/iw](https://github.com/manuel-freire/iw/tree/main/plantilla/src/main/java/es/ucm/fdi/iw) están los ficheros de configuración-mediante-código de la aplicación (ojo porque en otro sitio está el fichero principal de configuración-mediante-propiedades, [application.properties](https://github.com/manuel-freire/iw/blob/main/plantilla/src/main/resources/application.properties)):
+## Funcionalidades actuales (entrega)
 
-    * **AppConfig.java** - configura LocalData (usado para gestionar subida y bajada de ficheros de usuario) y fichero de internacionalización (que debería llamarse `Messages_XX.properties`, donde `XX` es un código como `es` para español ó `en` para inglés; y vivir en el directorio [resources](https://github.com/manuel-freire/iw/tree/main/plantilla/src/main/resources).
-    * **IwApplication.java** - punto de entrada de Spring Boot
-    * **IwUserDetailsService.java** - autenticación mediante base de datos. Referenciado desde SecurityConfig.java. La base de datos se inicializa tras cada arranque desde el [import.sql](https://github.com/manuel-freire/iw/blob/main/plantilla/src/main/resources/import.sql), aunque tocando [application.properties](https://github.com/manuel-freire/iw/blob/main/plantilla/src/main/resources/application.properties) puedes hacer que se guarde y cargue de disco, ignorando el _import_.
-    * **LocalData.java** - facilita guardar y devolver ficheros de usuario (es decir, que no forman parte de los fuentes de tu aplicación). Para ello colabora con AppConfig y usa el directorio especificado en [application.properties](https://github.com/manuel-freire/iw/blob/main/plantilla/src/main/resources/application.properties)
-    * **LoginSuccessHandler.java** - añade una variable de sesión llamada `u` nada más entrar un usuario, con la información de ese usuario. Esta variable es accesible desde Thymeleaf con `${session.user}`, y desde cualquier _Mapping_ de controllador usando el argumento `HttpSession session`, y leyendo su valor vía `(User)session.getAttribute("u")`. También añade a la sesión algo de configuración para websockets (variables `ws` y `url`), que se escriben como JS en las cabeceras de las páginas en el fragmento [head.html](https://github.com/manuel-freire/iw/blob/main/plantilla/src/main/resources/templates/fragments/head.html).
-    * **SecurityConfig.java** - establece la configuración de seguridad. Modifica su método `configure` para decir quién puede hacer qué, mediante `hasRole` y `permitAll`. 
-    * **StartupConfig.java** - se ejecuta nada más lanzarse la aplicación. En la plantilla sólo se usa para inicializar la `debug` a partir del [application.properties](https://github.com/manuel-freire/iw/blob/main/plantilla/src/main/resources/application.properties), accesible desde Thymeleaf mediante `${application.debug}`
-    * **WebSocketConfig.java** - configura uso de websockets
-    * **WebSocketSecurityConfig.java** - seguridad para websockets
+- **Página de inicio** (`/`): presentación del proyecto y enlaces a los módulos.
+- **Módulo de Gastos** (`/modulos/gastos`): descripción de la funcionalidad de control de gastos compartidos.
+- **Módulo de Compra** (`/modulos/compra`): organización de compras y reparto flexible.
+- **Módulo Home** (`/modulos/home`): panel de control centralizado del piso.
+- **Módulo de Tareas** (`/modulos/tareas`): gestión de tareas domésticas con **demo JavaScript interactiva** (botón que añade ítems a una lista sin backend).
+- **Módulo de Calendario** (`/modulos/calendario`): planificación y disponibilidad compartida.
+- **Autores** (`/autores`): información sobre el autor del proyecto.
+- **Login y seguridad**: autenticación con formulario; botones de debug para login rápido (usuarios A y B).
+- **Administración** (`/admin/`): visible solo para usuarios con rol ADMIN.
 
-- en [src/main/java/es/ucm/fdi/iw/controller](https://github.com/manuel-freire/iw/tree/main/plantilla/src/main/java/es/ucm/fdi/iw/controller) hay 3 controladores:
+## Cómo ejecutar
 
-  * **RootController.java** - para usuarios que acaban de llegar al sitio, gestiona `/` y `/login`
-  * **AdminController.java** - para administradores, gestionando todo lo que hay bajo `/admin`. No hace casi nada, pero sólo pueden llegar allí los que tengan rol administrador (porque así lo dice en SecurityConfig.config)
-  * **UserControlller.java** - para usuarios registrados, gestionando todo lo que hay bajo `/user`. Tiene funcionalidad útil para construir páginas:
-  
-    + Un ejemplo de método para gestionar un formulario de cambiar información del usuario (bajo `@PostMapping("/{id}")`)
-    + Puede devolver imágenes de avatar, y permite también subirlas. Ver métodos `getPic` (bajo `@GetMapping("{id}/pic")`) y `postPic` (bajo `@PostMapping("{id}/pic")`)
-    + Puede gestionar también peticiones AJAX (= que no devuelven vistas) para consultar mensajes recibidos, consultar cuántos mensajes no-leídos tiene ese usuario, y enviar un mensaje a ese usuario (`retrieveMessages`, `checkUnread` y `postMsg`, respectivamente). Esta última función también envía el mensaje via websocket al usuario, si es que está conectado en ese momento.
-    
-- en [src/main/resources](https://github.com/manuel-freire/iw/tree/main/plantilla/src/main/resources) están los recursos no-de-código-de-servidor, y en particular, las vistas, los recursos web estáticos, el contenido inicial de la BBDD, y las propiedades generales de la aplicación.
+### Requisitos
+- **Java 21** (JDK)
+- **Maven 3.8+** (o usar el wrapper `mvnw` si está disponible)
 
-  * **static/**  - contiene recursos estáticos web, como ficheros .js, .css, ó imágenes que no cambian
-  
-    - **js/stomp.js** - necesario para usar STOMP sobre websockets (que es lo que usaremos para enviar y recibir mensajes)
-    - **js/iw.js** - configura websockets, y contiene funciones de utilidad para gestionar AJAX y previsualización de imágenes
-    - **js/ajax-demo.js** - ejemplos (usados desde [user.html](https://github.com/manuel-freire/iw/blob/main/plantilla/src/main/resources/templates/user.html)) de AJAX, envío y recepción de mensajes por websockets, y previsualización de imágenes
+### Comandos
 
-  * **templates/** - contiene vistas, y fragmentos de vista (en `templates/fragments`)
-  
-    - **fragments/head.html** - para incluir en el `<head>` de tus páginas. Incluída desde  
-    - **fragments/nav.html** - para incluir al comienzo del `<body>`, contiene una navbar. *Cambia los contenidos* para que tengan sentido para tu aplicación.    
-    - **fragments/footer.html** - para incluir al final del `<body>`, con un footer. *Cambia su contenido visual*, pero ten en cuenta que es donde se cargan los .js de bootstrap, además de `stomp.js` e `iw.js`.
-    - **error.html** - usada cuando se producen errores. Tiene un comportamiento muy distinto cuando la aplicación está en modo `debug` y cuando no lo está. 
-    - **user.html** - vista de usuario. Debería mostrar información sobre un usuario, y posiblemente formularios para modificarle, pero en la plantilla se usa para demostrar funcionamiento de AJAX y websockets, en conjunción con `static/js/ajax-demo.js`. Deberías, lógicamente, *cambiar su contenido*.
-  
-  * **application.properties** - contiene la configuración general de la aplicación. Ojo porque ciertas configuraciones se hacen en los ficheros `XyzConfig.java` vistos anteriormente. Por ejemplo, qué roles pueden acceder a qué rutas se configura desde `SecurityConfig.java`.
-  * **import.sql** - contiene código SQL para inicializar la BBDD. La configuración inicial hace que la BBDD se borre y reinicialice a cada arranque, lo cual es útil para pruebas. Es posible cambiarla para que la BBDD persista entre arraques de la aplicación, y se ignore el `import.sql`.
-    
+```bash
+# Desde la raíz del repositorio
+mvn spring-boot:run
+```
+
+La aplicación se inicia en **http://localhost:8080**.
+
+## Estructura del proyecto
+
+```
+├── pom.xml                          # Configuración Maven
+├── README.md                        # Este fichero
+├── src/
+│   ├── main/
+│   │   ├── java/es/ucm/fdi/iw/
+│   │   │   ├── controller/
+│   │   │   │   ├── RootController.java      # Endpoints principales
+│   │   │   │   ├── AdminController.java     # Panel de administración
+│   │   │   │   ├── UserController.java      # Gestión de usuarios
+│   │   │   │   └── ApiController.java       # API REST
+│   │   │   ├── model/                       # Entidades JPA
+│   │   │   ├── SecurityConfig.java          # Configuración de seguridad
+│   │   │   ├── LoginSuccessHandler.java     # Handler post-login
+│   │   │   ├── StartupConfig.java           # Configuración inicial
+│   │   │   └── IwApplication.java           # Punto de entrada
+│   │   └── resources/
+│   │       ├── application.properties       # Configuración de la app
+│   │       ├── templates/
+│   │       │   ├── fragments/               # Fragmentos Thymeleaf (head, nav, footer)
+│   │       │   ├── index.html               # Página principal
+│   │       │   ├── login.html               # Formulario de login
+│   │       │   ├── gastos.html, compra.html, home.html, tareas.html, calendario.html
+│   │       │   ├── autores.html             # Info del autor
+│   │       │   └── admin.html, user.html, error.html
+│   │       └── static/
+│   │           ├── css/                     # Estilos (Bootstrap 5.3.3 + custom.css)
+│   │           ├── js/                      # Scripts (Bootstrap, WebSocket, utilidades)
+│   │           └── img/                     # Imágenes (logo, favicon, fotos)
+│   └── test/                                # Tests (JUnit, Karate)
+```
+
+## Login y roles (debug)
+
+La aplicación incluye **botones de login rápido** (visibles solo en modo debug):
+
+| Botón | Usuario | Contraseña | Roles |
+|-------|---------|------------|-------|
+| **a** | `a` | `aa` | USER, ADMIN |
+| **b** | `b` | `aa` | USER |
+
+Estos botones aparecen en la esquina superior derecha de la barra de navegación cuando no hay sesión activa.
+
+Tras hacer login, la navbar muestra los enlaces a todos los módulos. El enlace **Administrar** solo es visible para usuarios con rol ADMIN.
+
+## Rutas y vistas
+
+| Ruta | Vista | Acceso |
+|------|-------|--------|
+| `GET /` | index.html | Público |
+| `GET /login` | login.html | Público |
+| `GET /modulos/gastos` | gastos.html | Requiere login (USER) |
+| `GET /modulos/compra` | compra.html | Requiere login (USER) |
+| `GET /modulos/home` | home.html | Requiere login (USER) |
+| `GET /modulos/tareas` | tareas.html | Requiere login (USER) |
+| `GET /modulos/calendario` | calendario.html | Requiere login (USER) |
+| `GET /autores` | autores.html | Requiere login (USER) |
+| `GET /admin/` | admin.html | Requiere ADMIN |
+| `GET /user/{id}` | user.html | Requiere login (USER) |
+
+## Notas de escalabilidad
+
+### Arquitectura propuesta para crecer
+
+```
+controller/     → Recibe peticiones HTTP, delega en servicios
+service/        → Lógica de negocio (a crear cuando se implementen funcionalidades reales)
+repository/     → Acceso a datos JPA (Spring Data)
+model/          → Entidades de dominio
+dto/            → Objetos de transferencia (a crear)
+```
+
+### Módulos futuros (roadmap)
+
+1. **Persistencia de gastos**: entidad `Gasto` con JPA, CRUD completo, reparto automático.
+2. **Lista de la compra**: entidad `ItemCompra`, listas compartidas en tiempo real (WebSocket).
+3. **Tareas con rotación**: entidad `Tarea`, asignación automática por turnos, historial.
+4. **Calendario compartido**: entidad `Evento`, vistas por semana/mes, detección de conflictos.
+5. **Notificaciones**: sistema de avisos push vía WebSocket (ya preparado en la plantilla).
+
+### Consideraciones de seguridad
+
+- Validación de entrada en todos los formularios (Bean Validation / `@Valid`).
+- CSRF habilitado (excepto API REST).
+- Autorización por roles (`@Secured`, `@PreAuthorize`).
+- Sanitización de datos para evitar XSS.
+
+### Separación de responsabilidades
+
+- **Templates**: solo presentación, usando fragmentos reutilizables (`head`, `nav`, `footer`).
+- **Controllers**: delegar siempre en servicios, no contener lógica de negocio.
+- **Servicios**: encapsular lógica, transacciones y validaciones.
+- **Repositorios**: solo acceso a datos, sin lógica.
