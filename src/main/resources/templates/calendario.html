@@ -10,47 +10,89 @@
     <header th:replace="~{fragments/nav.html :: nav}"></header>
 
     <main class="flex-shrink-0">
-        <div class="container mt-5">
+        <div class="container mt-4">
             <h1 class="mb-4">Calendario</h1>
 
-            <p class="lead">
-                Módulo para coordinar horarios y disponibilidad de los integrantes del piso.
-            </p>
+            <!-- Sin piso -->
+            <th:block th:unless="${piso}">
+                <div class="alert alert-info">
+                    Inicia sesión para ver los eventos de tu piso.
+                </div>
+                <p>Módulo para coordinar horarios y planificar eventos compartidos del piso.</p>
+            </th:block>
 
-            <p>
-                Permite visualizar la planificación del piso y facilitar la organización
-                de eventos, tareas y ausencias de forma conjunta.
-            </p>
+            <!-- Con piso -->
+            <th:block th:if="${piso}">
 
-            <hr class="my-4">
+                <!-- Formulario crear evento -->
+                <div class="card mb-4">
+                    <div class="card-header">Crear nuevo evento</div>
+                    <div class="card-body">
+                        <form th:action="@{/modulos/calendario}" method="post" class="row g-3">
+                            <div class="col-md-4">
+                                <label for="titulo" class="form-label">Título</label>
+                                <input type="text" class="form-control" id="titulo" name="titulo"
+                                    placeholder="Ej: Cena de grupo" required>
+                            </div>
+                            <div class="col-md-8">
+                                <label for="descripcion" class="form-label">Descripción</label>
+                                <input type="text" class="form-control" id="descripcion" name="descripcion"
+                                    placeholder="Descripción del evento">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="fechaInicio" class="form-label">Inicio</label>
+                                <input type="datetime-local" class="form-control" id="fechaInicio" name="fechaInicio"
+                                    required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="fechaFin" class="form-label">Fin</label>
+                                <input type="datetime-local" class="form-control" id="fechaFin" name="fechaFin"
+                                    required>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">Crear evento</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
-            <h2>Funcionalidades</h2>
-            <ul class="mt-3">
-                <li>
-                    <strong>Vista por horas:</strong>
-                    calendario con franjas horarias.
-                </li>
-                <li>
-                    <strong>Vista por integrante:</strong>
-                    consulta de la disponibilidad individual.
-                </li>
-                <li>
-                    <strong>Conflictos:</strong>
-                    detección de solapamientos.
-                </li>
-                <li>
-                    <strong>Sugerencias de huecos:</strong>
-                    búsqueda de momentos comunes disponibles.
-                </li>
-                <li>
-                    <strong>Capas de información:</strong>
-                    visualización conjunta de eventos, tareas y ausencias.
-                </li>
-                <li>
-                    <strong>Integración:</strong>
-                    conexión con otros módulos del sistema.
-                </li>
-            </ul>
+                <!-- Listado de eventos -->
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Evento</th>
+                                <th>Inicio</th>
+                                <th>Fin</th>
+                                <th>Creador</th>
+                                <th>Asistencia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="e : ${eventos}">
+                                <td>
+                                    <strong th:text="${e.titulo}">Evento</strong>
+                                    <br><small class="text-muted" th:text="${e.descripcion}">desc</small>
+                                </td>
+                                <td th:text="${#temporals.format(e.fechaInicio, 'dd/MM/yyyy HH:mm')}">fecha</td>
+                                <td th:text="${#temporals.format(e.fechaFin, 'dd/MM/yyyy HH:mm')}">fecha</td>
+                                <td th:text="${e.creador.username}">usr</td>
+                                <td>
+                                    <!--/* Mostrar asistencia de cada evento */-->
+                                    <th:block th:each="ae : ${asistencias}" th:if="${ae.evento.id == e.id}">
+                                        <span class="badge"
+                                            th:classappend="${ae.estado.name() == 'CONFIRMADO'} ? 'bg-success' : (${ae.estado.name() == 'RECHAZADO'} ? 'bg-danger' : 'bg-secondary')"
+                                            th:text="${ae.usuario.username + ': ' + ae.estado}">usr: ESTADO</span>
+                                    </th:block>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(eventos)}">
+                                <td colspan="5" class="text-muted text-center">No hay eventos registrados.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </th:block>
 
             <p class="mt-4">
                 <a th:href="@{/}">← Volver al inicio</a>

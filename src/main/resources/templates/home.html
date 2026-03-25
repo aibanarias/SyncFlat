@@ -10,51 +10,124 @@
     <header th:replace="~{fragments/nav.html :: nav}"></header>
 
     <main class="flex-shrink-0">
-        <div class="container mt-5">
-            <h1 class="mb-4">Home</h1>
+        <div class="container mt-4">
+            <h1 class="mb-4">Panel del piso</h1>
 
-            <p class="lead">
-                Panel de control centralizado del piso.
-            </p>
+            <!-- Sin piso asignado (usuario no logueado o sin piso) -->
+            <th:block th:unless="${piso}">
+                <div class="alert alert-info">
+                    <strong>Bienvenido a SyncFlat.</strong>
+                    Inicia sesión para ver el panel de tu piso.
+                </div>
+                <p class="lead">
+                    Panel de control centralizado del piso. Desde aquí podrás ver un resumen
+                    de próximos eventos, tareas pendientes, gastos recientes y alertas.
+                </p>
+            </th:block>
 
-            <p>
-                Desde esta vista se ofrece una visión general del estado del piso,
-                facilitando la coordinación diaria entre los integrantes.
-            </p>
+            <!-- Con piso asignado -->
+            <th:block th:if="${piso}">
+                <div class="alert alert-light border">
+                    <strong th:text="${piso.nombre}">Piso</strong>
+                    — <span th:text="${piso.direccion}">Dirección</span>
+                </div>
 
-            <hr class="my-4">
+                <div class="row">
+                    <!-- Alertas -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-warning text-dark">
+                                <strong>🔔 Alertas</strong>
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item" th:each="a : ${alertas}">
+                                    <span class="badge bg-secondary" th:text="${a.tipo}">INFO</span>
+                                    <span th:text="${a.mensaje}">Mensaje</span>
+                                    <small class="text-muted"
+                                        th:text="${#temporals.format(a.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</small>
+                                </li>
+                                <li class="list-group-item text-muted" th:if="${#lists.isEmpty(alertas)}">
+                                    No hay alertas pendientes.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
 
-            <h2>Funcionalidades</h2>
-            <ul class="mt-3">
-                <li>
-                    <strong>Resumen general:</strong>
-                    visión rápida del estado del piso.
-                </li>
-                <li>
-                    <strong>Calendario resumido:</strong>
-                    próximos eventos y tareas relevantes.
-                </li>
-                <li>
-                    <strong>Eventos internos:</strong>
-                    creación y gestión de actividades del piso.
-                </li>
-                <li>
-                    <strong>Confirmación:</strong>
-                    confirmación de asistencia a eventos.
-                </li>
-                <li>
-                    <strong>Presencia y ausencias:</strong>
-                    gestión de disponibilidad.
-                </li>
-                <li>
-                    <strong>Alertas:</strong>
-                    avisos importantes para los integrantes.
-                </li>
-            </ul>
+                    <!-- Próximos eventos -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <strong>📅 Próximos eventos</strong>
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item" th:each="e : ${eventos}">
+                                    <strong th:text="${e.titulo}">Evento</strong>
+                                    <br>
+                                    <small class="text-muted"
+                                        th:text="${#temporals.format(e.fechaInicio, 'dd/MM/yyyy HH:mm')}">Fecha</small>
+                                    — <small th:text="${e.descripcion}">Desc</small>
+                                </li>
+                                <li class="list-group-item text-muted" th:if="${#lists.isEmpty(eventos)}">
+                                    No hay eventos próximos.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
 
-            <p class="mt-4">
-                <a th:href="@{/}">← Volver al inicio</a>
-            </p>
+                    <!-- Tareas pendientes -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <strong>✅ Tareas pendientes</strong>
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item" th:each="at : ${tareasPendientes}">
+                                    <strong th:text="${at.tarea.nombre}">Tarea</strong>
+                                    — asignada a <span th:text="${at.usuario.username}">usr</span>
+                                    <br>
+                                    <small class="text-muted" th:if="${at.tarea.fechaLimite}">
+                                        Límite: <span th:text="${at.tarea.fechaLimite}">fecha</span>
+                                    </small>
+                                </li>
+                                <li class="list-group-item text-muted" th:if="${#lists.isEmpty(tareasPendientes)}">
+                                    No hay tareas pendientes.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Gastos recientes -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-danger text-white">
+                                <strong>💰 Gastos recientes</strong>
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between" th:each="g : ${gastos}">
+                                    <div>
+                                        <strong th:text="${g.concepto}">Concepto</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            Pagado por <span th:text="${g.pagador.username}">usr</span>
+                                            el <span th:text="${g.fecha}">fecha</span>
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="fw-bold" th:text="${g.importe + ' €'}">0 €</span>
+                                        <br>
+                                        <span class="badge"
+                                            th:classappend="${g.estado.name() == 'PENDIENTE'} ? 'bg-warning text-dark' : 'bg-success'"
+                                            th:text="${g.estado}">PENDIENTE</span>
+                                    </div>
+                                </li>
+                                <li class="list-group-item text-muted" th:if="${#lists.isEmpty(gastos)}">
+                                    No hay gastos registrados.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </th:block>
         </div>
     </main>
 

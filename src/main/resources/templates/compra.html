@@ -3,54 +3,93 @@
 
 <head>
     <th:block th:replace="~{fragments/head :: header}" />
-    <title>Compra del super - SyncFlat</title>
+    <title>Lista de la compra - SyncFlat</title>
 </head>
 
 <body class="d-flex flex-column h-100">
     <header th:replace="~{fragments/nav.html :: nav}"></header>
 
     <main class="flex-shrink-0">
-        <div class="container mt-5">
-            <h1 class="mb-4">Compra del super</h1>
+        <div class="container mt-4">
+            <h1 class="mb-4">Lista de la compra</h1>
 
-            <p class="lead">
-                Módulo para organizar las compras compartidas del hogar.
-            </p>
+            <!-- Sin piso -->
+            <th:block th:unless="${piso}">
+                <div class="alert alert-info">
+                    Inicia sesión para gestionar la lista de la compra de tu piso.
+                </div>
+                <p>Módulo para organizar las compras compartidas del hogar.</p>
+            </th:block>
 
-            <p>
-                Permite coordinar qué productos se necesitan, registrar las compras
-                realizadas y repartir los gastos de forma flexible entre los integrantes.
-            </p>
+            <!-- Con piso -->
+            <th:block th:if="${piso}">
 
-            <hr class="my-4">
+                <!-- Formulario añadir item (solo si hay listas y productos) -->
+                <div class="card mb-4" th:if="${not #lists.isEmpty(listas) and not #lists.isEmpty(productos)}">
+                    <div class="card-header">Añadir producto a la lista</div>
+                    <div class="card-body">
+                        <form th:action="@{/modulos/compra/item}" method="post" class="row g-3">
+                            <div class="col-md-3">
+                                <label for="listaId" class="form-label">Lista</label>
+                                <select class="form-select" id="listaId" name="listaId" required>
+                                    <option th:each="l : ${listas}" th:value="${l.id}" th:text="${l.nombre}">Lista
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="productoId" class="form-label">Producto</label>
+                                <select class="form-select" id="productoId" name="productoId" required>
+                                    <option th:each="p : ${productos}" th:value="${p.id}" th:text="${p.nombre}">Producto
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="cantidad" class="form-label">Cantidad</label>
+                                <input type="number" class="form-control" id="cantidad" name="cantidad" value="1"
+                                    min="1" required>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">Añadir</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
-            <h2>Funcionalidades</h2>
-            <ul class="mt-3">
-                <li>
-                    <strong>Catálogo compartido:</strong>
-                    listado común de productos habituales.
-                </li>
-                <li>
-                    <strong>Lista de la compra:</strong>
-                    creación y gestión de listas compartidas.
-                </li>
-                <li>
-                    <strong>Registro de compras:</strong>
-                    introducción de compras realizadas con información básica.
-                </li>
-                <li>
-                    <strong>Reparto del gasto:</strong>
-                    asignación flexible de gastos por productos o personas.
-                </li>
-                <li>
-                    <strong>Historial:</strong>
-                    consulta de compras anteriores.
-                </li>
-                <li>
-                    <strong>Estadísticas:</strong>
-                    análisis simple de patrones de gasto.
-                </li>
-            </ul>
+                <!-- Listas activas -->
+                <div th:each="lista : ${listas}" class="mb-4">
+                    <h3>
+                        <span th:text="${lista.nombre}">Lista</span>
+                        <small class="text-muted" th:text="${lista.fechaCreacion}">fecha</small>
+                        <span class="badge bg-success" th:if="${lista.completada}">Completada</span>
+                    </h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Estado</th>
+                                <th>Producto</th>
+                                <th>Categoría</th>
+                                <th>Cantidad</th>
+                                <th>Solicitado por</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="item : ${items}" th:if="${item.lista.id == lista.id}">
+                                <td>
+                                    <button class="btn btn-sm toggle-compra"
+                                        th:classappend="${item.comprado} ? 'btn-success' : 'btn-outline-secondary'"
+                                        th:data-id="${item.id}" th:text="${item.comprado} ? '✓' : '○'">○</button>
+                                </td>
+                                <td th:text="${item.producto.nombre}"
+                                    th:classappend="${item.comprado} ? 'text-decoration-line-through text-muted' : ''">
+                                    Producto</td>
+                                <td th:text="${item.producto.categoria}">Cat</td>
+                                <td th:text="${item.cantidad}">1</td>
+                                <td th:text="${item.solicitadoPor.username}">usr</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </th:block>
 
             <p class="mt-4">
                 <a th:href="@{/}">← Volver al inicio</a>
@@ -59,6 +98,30 @@
     </main>
 
     <th:block th:replace="~{fragments/footer.html :: footer}" />
+
+    <!-- AJAX toggle compra (usa go() de iw.js, que gestiona CSRF automáticamente) -->
+    <script th:if="${piso}">
+        document.querySelectorAll('.toggle-compra').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = this.getAttribute('data-id');
+                var button = this;
+                var row = button.closest('tr');
+
+                go('/modulos/compra/item/' + id + '/toggle', 'POST')
+                    .then(function (data) {
+                        if (data.comprado) {
+                            button.textContent = '✓';
+                            button.className = 'btn btn-sm toggle-compra btn-success';
+                            row.querySelector('td:nth-child(2)').classList.add('text-decoration-line-through', 'text-muted');
+                        } else {
+                            button.textContent = '○';
+                            button.className = 'btn btn-sm toggle-compra btn-outline-secondary';
+                            row.querySelector('td:nth-child(2)').classList.remove('text-decoration-line-through', 'text-muted');
+                        }
+                    });
+            });
+        });
+    </script>
 </body>
 
 </html>

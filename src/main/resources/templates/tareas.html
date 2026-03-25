@@ -10,69 +10,152 @@
     <header th:replace="~{fragments/nav.html :: nav}"></header>
 
     <main class="flex-shrink-0">
-        <div class="container mt-5">
+        <div class="container mt-4">
             <h1 class="mb-4">Tareas</h1>
 
-            <p class="lead">
-                Módulo para organizar y repartir las tareas domésticas del piso.
-            </p>
+            <!-- Sin piso -->
+            <th:block th:unless="${piso}">
+                <div class="alert alert-info">
+                    Inicia sesión para gestionar las tareas de tu piso.
+                </div>
+                <p>Módulo para organizar y repartir las tareas domésticas del piso.</p>
+            </th:block>
 
-            <p>
-                Permite definir tareas, asignarlas entre los integrantes y hacer
-                un seguimiento básico de su cumplimiento.
-            </p>
+            <!-- Con piso -->
+            <th:block th:if="${piso}">
 
-            <hr class="my-4">
+                <!-- Formulario crear tarea -->
+                <div class="card mb-4">
+                    <div class="card-header">Crear nueva tarea</div>
+                    <div class="card-body">
+                        <form th:action="@{/modulos/tareas}" method="post" class="row g-3">
+                            <div class="col-md-4">
+                                <label for="nombre" class="form-label">Nombre</label>
+                                <input type="text" class="form-control" id="nombre" name="nombre"
+                                    placeholder="Ej: Fregar el suelo" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="descripcion" class="form-label">Descripción</label>
+                                <input type="text" class="form-control" id="descripcion" name="descripcion"
+                                    placeholder="Breve descripción">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="tipo" class="form-label">Tipo</label>
+                                <select class="form-select" id="tipo" name="tipo" required>
+                                    <option value="PUNTUAL">Puntual</option>
+                                    <option value="RECURRENTE">Recurrente</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="frecuencia" class="form-label">Frecuencia</label>
+                                <input type="text" class="form-control" id="frecuencia" name="frecuencia"
+                                    placeholder="Ej: SEMANAL">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="fechaLimite" class="form-label">Fecha límite</label>
+                                <input type="date" class="form-control" id="fechaLimite" name="fechaLimite" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="asignadoId" class="form-label">Asignar a</label>
+                                <select class="form-select" id="asignadoId" name="asignadoId">
+                                    <option value="">Sin asignar</option>
+                                    <option th:each="mp : ${miembros}" th:value="${mp.usuario.id}"
+                                        th:text="${mp.usuario.firstName + ' ' + mp.usuario.lastName}">Miembro</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end">
+                                <button type="submit" class="btn btn-success w-100">Crear tarea</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
-            <h2>Funcionalidades</h2>
-            <ul class="mt-3">
-                <li>
-                    <strong>Tareas recurrentes y puntuales:</strong>
-                    definición de tareas periódicas o únicas.
-                </li>
-                <li>
-                    <strong>Asignación y rotación:</strong>
-                    reparto equitativo mediante turnos.
-                </li>
-                <li>
-                    <strong>Fechas límite:</strong>
-                    establecimiento de plazos para cada tarea.
-                </li>
-                <li>
-                    <strong>Validación:</strong>
-                    confirmación por parte de los compañeros.
-                </li>
-                <li>
-                    <strong>Historial:</strong>
-                    consulta de tareas realizadas.
-                </li>
-                <li>
-                    <strong>Recordatorios:</strong>
-                    avisos antes de los vencimientos.
-                </li>
-                <li>
-                    <strong>Seguimiento:</strong>
-                    visión general del cumplimiento.
-                </li>
-            </ul>
+                <!-- Tabla de tareas -->
+                <h3>Tareas del piso</h3>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Tarea</th>
+                                <th>Tipo</th>
+                                <th>Frecuencia</th>
+                                <th>Fecha límite</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="t : ${tareas}">
+                                <td>
+                                    <strong th:text="${t.nombre}">Tarea</strong>
+                                    <br><small class="text-muted" th:text="${t.descripcion}">desc</small>
+                                </td>
+                                <td>
+                                    <span class="badge"
+                                        th:classappend="${t.tipo.name() == 'RECURRENTE'} ? 'bg-info' : 'bg-secondary'"
+                                        th:text="${t.tipo}">Tipo</span>
+                                </td>
+                                <td th:text="${t.frecuencia ?: '—'}">—</td>
+                                <td th:text="${t.fechaLimite}">fecha</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(tareas)}">
+                                <td colspan="4" class="text-muted text-center">No hay tareas creadas.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-            <hr class="my-4">
+                <!-- Asignaciones -->
+                <div th:if="${not #lists.isEmpty(asignaciones)}">
+                    <h3 class="mt-4">Asignaciones</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Tarea</th>
+                                <th>Asignada a</th>
+                                <th>Fecha asignación</th>
+                                <th>Estado</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="at : ${asignaciones}">
+                                <td th:text="${at.tarea.nombre}">Tarea</td>
+                                <td th:text="${at.usuario.username}">usr</td>
+                                <td th:text="${at.fechaAsignacion}">fecha</td>
+                                <td>
+                                    <span class="badge" th:if="${at.fechaCompletada != null}" class="bg-success">
+                                        Completada <span th:text="${at.fechaCompletada}">fecha</span>
+                                    </span>
+                                    <span class="badge bg-warning text-dark"
+                                        th:if="${at.fechaCompletada == null}">Pendiente</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm completar-tarea"
+                                        th:classappend="${at.fechaCompletada != null} ? 'btn-outline-secondary' : 'btn-success'"
+                                        th:data-id="${at.id}"
+                                        th:text="${at.fechaCompletada != null} ? 'Reabrir' : 'Completar'">Completar</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-            <h2>Demo JavaScript</h2>
-            <p>Ejemplo interactivo: pulsa el botón para añadir tareas a la lista (sin backend).</p>
-            <button id="btn-add-task" class="btn btn-primary mb-3" type="button">Añadir tarea (demo)</button>
-            <ul id="demo-list" class="list-group mb-4"></ul>
+                <hr class="my-4">
+                <h2>Demo JavaScript</h2>
+                <p>Ejemplo interactivo: pulsa el botón para añadir tareas a la lista (sin backend).</p>
+                <button id="btn-add-task" class="btn btn-primary mb-3" type="button">Añadir tarea (demo)</button>
+                <ul id="demo-list" class="list-group mb-4"></ul>
 
-            <script>
-                document.getElementById('btn-add-task').addEventListener('click', function () {
-                    const list = document.getElementById('demo-list');
-                    const li = document.createElement('li');
-                    li.className = 'list-group-item';
-                    const now = new Date();
-                    li.textContent = 'Tarea #' + (list.children.length + 1) + ' — añadida a las ' + now.toLocaleTimeString();
-                    list.appendChild(li);
-                });
-            </script>
+                <script>
+                    document.getElementById('btn-add-task').addEventListener('click', function () {
+                        const list = document.getElementById('demo-list');
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item';
+                        const now = new Date();
+                        li.textContent = 'Tarea #' + (list.children.length + 1) + ' — añadida a las ' + now.toLocaleTimeString();
+                        list.appendChild(li);
+                    });
+                </script>
+            </th:block>
 
             <p class="mt-4">
                 <a th:href="@{/}">← Volver al inicio</a>
@@ -81,6 +164,31 @@
     </main>
 
     <th:block th:replace="~{fragments/footer.html :: footer}" />
+
+    <!-- AJAX completar tarea (usa go() de iw.js) -->
+    <script th:if="${piso}">
+        document.querySelectorAll('.completar-tarea').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = this.getAttribute('data-id');
+                var button = this;
+
+                go('/modulos/tareas/' + id + '/completar', 'POST')
+                    .then(function (data) {
+                        if (data.completada) {
+                            button.textContent = 'Reabrir';
+                            button.className = 'btn btn-sm completar-tarea btn-outline-secondary';
+                            button.closest('tr').querySelector('.badge').className = 'badge bg-success';
+                            button.closest('tr').querySelector('.badge').textContent = 'Completada';
+                        } else {
+                            button.textContent = 'Completar';
+                            button.className = 'btn btn-sm completar-tarea btn-success';
+                            button.closest('tr').querySelector('.badge').className = 'badge bg-warning text-dark';
+                            button.closest('tr').querySelector('.badge').textContent = 'Pendiente';
+                        }
+                    });
+            });
+        });
+    </script>
 </body>
 
 </html>

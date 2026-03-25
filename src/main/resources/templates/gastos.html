@@ -10,47 +10,100 @@
     <header th:replace="~{fragments/nav.html :: nav}"></header>
 
     <main class="flex-shrink-0">
-        <div class="container mt-5">
+        <div class="container mt-4">
             <h1 class="mb-4">Gastos compartidos</h1>
 
-            <p class="lead">
-                Módulo para gestionar los gastos del piso de forma clara y justa.
-            </p>
+            <!-- Sin piso -->
+            <th:block th:unless="${piso}">
+                <div class="alert alert-info">
+                    Inicia sesión para gestionar los gastos de tu piso.
+                </div>
+                <p>Módulo para gestionar los gastos del piso de forma clara y justa.
+                    Permite registrar gastos comunes y llevar un control transparente.</p>
+            </th:block>
 
-            <p>
-                Permite registrar gastos comunes y llevar un control transparente
-                de quién ha pagado y qué importes están pendientes.
-            </p>
+            <!-- Con piso -->
+            <th:block th:if="${piso}">
 
-            <hr class="my-4">
+                <!-- Formulario crear gasto -->
+                <div class="card mb-4">
+                    <div class="card-header">Registrar nuevo gasto</div>
+                    <div class="card-body">
+                        <form th:action="@{/modulos/gastos}" method="post" class="row g-3">
+                            <div class="col-md-5">
+                                <label for="concepto" class="form-label">Concepto</label>
+                                <input type="text" class="form-control" id="concepto" name="concepto"
+                                    placeholder="Ej: Factura de internet" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="importe" class="form-label">Importe (€)</label>
+                                <input type="number" step="0.01" class="form-control" id="importe" name="importe"
+                                    placeholder="0.00" required>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">Registrar gasto</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
-            <h2>Funcionalidades</h2>
-            <ul class="mt-3">
-                <li>
-                    <strong>Registro de gastos:</strong>
-                    alta de gastos comunes con concepto, importe y participantes.
-                </li>
-                <li>
-                    <strong>Reparto:</strong>
-                    reparto automático o personalizado según los participantes.
-                </li>
-                <li>
-                    <strong>Estado de los gastos:</strong>
-                    seguimiento de gastos pendientes y pagados.
-                </li>
-                <li>
-                    <strong>Recordatorios:</strong>
-                    avisos para pagos pendientes.
-                </li>
-                <li>
-                    <strong>Balance:</strong>
-                    visualización del saldo de cada persona.
-                </li>
-                <li>
-                    <strong>Liquidación:</strong>
-                    cálculo de liquidaciones para cerrar periodos.
-                </li>
-            </ul>
+                <!-- Tabla de gastos -->
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Concepto</th>
+                                <th>Importe</th>
+                                <th>Pagador</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="g : ${gastos}">
+                                <td th:text="${g.concepto}">Concepto</td>
+                                <td th:text="${g.importe + ' €'}">0 €</td>
+                                <td th:text="${g.pagador.username}">usuario</td>
+                                <td th:text="${g.fecha}">fecha</td>
+                                <td>
+                                    <span class="badge"
+                                        th:classappend="${g.estado.name() == 'PENDIENTE'} ? 'bg-warning text-dark' : 'bg-success'"
+                                        th:text="${g.estado}">PENDIENTE</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(gastos)}">
+                                <td colspan="5" class="text-muted text-center">No hay gastos registrados.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Detalle participantes -->
+                <div th:if="${not #lists.isEmpty(participantes)}">
+                    <h3 class="mt-4">Detalle de participantes</h3>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Gasto</th>
+                                <th>Participante</th>
+                                <th>Importe asignado</th>
+                                <th>Pagado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="pg : ${participantes}">
+                                <td th:text="${pg.gasto.concepto}">gasto</td>
+                                <td th:text="${pg.usuario.username}">usuario</td>
+                                <td th:text="${pg.importeAsignado + ' €'}">0 €</td>
+                                <td>
+                                    <span class="badge" th:classappend="${pg.pagado} ? 'bg-success' : 'bg-secondary'"
+                                        th:text="${pg.pagado} ? 'Sí' : 'No'">No</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </th:block>
 
             <p class="mt-4">
                 <a th:href="@{/}">← Volver al inicio</a>
