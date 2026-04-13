@@ -12,7 +12,14 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * An authorized user of the system.
+ * Usuario de la aplicación.
+ * <p>
+ * Los roles se almacenan como una cadena separada por comas (p. ej. {@code "USER,ADMIN"})
+ * para simplificar la persistencia. La tabla se llama {@code IWUser} para evitar
+ * conflictos con la palabra reservada {@code USER} en H2.
+ * <p>
+ * Implementa {@link Transferable} para poder serializar a JSON sin exponer
+ * el hash de la contraseña.
  */
 @Entity
 @Data
@@ -31,8 +38,8 @@ import java.util.List;
 public class User implements Transferable<User.Transfer> {
 
   public enum Role {
-    USER, // normal users
-    ADMIN, // admin users
+    USER,
+    ADMIN,
   }
 
   @Id
@@ -51,7 +58,7 @@ public class User implements Transferable<User.Transfer> {
   private String colorFavorito;
 
   private boolean enabled;
-  private String roles; // split by ',' to separate roles
+  private String roles; // roles separados por coma, ej: "USER" o "USER,ADMIN"
 
   @OneToMany
   @JoinColumn(name = "sender_id")
@@ -63,14 +70,14 @@ public class User implements Transferable<User.Transfer> {
   private List<Topic> groups = new ArrayList<>();
 
   /**
-   * Checks whether this user has a given role.
-   * 
-   * @param role to check
-   * @return true iff this user has that role.
+   * Comprueba si el usuario tiene el rol indicado.
+   *
+   * @param role rol a comprobar
+   * @return {@code true} si el rol está presente en la cadena de roles del usuario
    */
   public boolean hasRole(Role role) {
     String roleName = role.name();
-    return Arrays.asList(roles.split(",")).contains(roleName);
+    return roles != null && Arrays.asList(roles.split(",")).contains(roleName);
   }
 
   @Getter

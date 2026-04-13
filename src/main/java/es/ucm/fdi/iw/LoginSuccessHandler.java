@@ -26,15 +26,13 @@ import es.ucm.fdi.iw.model.Topic;
 import es.ucm.fdi.iw.model.User;
 
 /**
- * Called when a user is first authenticated (via login).
- * Called from SecurityConfig; see https://stackoverflow.com/a/53353324
- * 
- * Adds a "u" variable to the session when a user is first authenticated.
- * Important: the user is retrieved from the database, but is not refreshed at
- * each request.
- * You should refresh the user's information if anything important changes; for
- * example, after
- * updating the user's profile.
+ * Manejador que se ejecuta tras un login exitoso.
+ * <p>
+ * Carga el usuario desde la base de datos, almacena sus datos en sesión
+ * (atributo {@code u}) y calcula las URLs base para HTTP y WebSocket.
+ * El usuario se guarda en sesión al autenticarse y no se refresca
+ * automáticamente en cada petición: si cambian datos relevantes del perfil,
+ * hay que actualizarlo manualmente en sesión.
  */
 @Component
 public class LoginSuccessHandler implements AuthenticationSuccessHandler {
@@ -48,67 +46,59 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
   private static Logger log = LogManager.getLogger(LoginSuccessHandler.class);
 
   /**
-   * Called whenever a user authenticates correctly.
+   * Inicializa la sesión del usuario recién autenticado.
+   * <p>
+   * Almacena el objeto {@link User} en el atributo de sesión {@code u},
+   * calcula la URL base y la URL de WebSocket (con {@code wss://} en el
+   * entorno UCM), y guarda los tópicos suscritos. Redirige a {@code admin/}
+   * o a {@code user/{id}} según el rol.
    */
   @Override
   public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
       Authentication authentication) throws IOException, ServletException {
 
-    /*
-     * Avoids following warning:
-     * Cookie “JSESSIONID” will be soon rejected because it has the “SameSite”
-     * attribute set to “None” or an invalid value, without the “secure” attribute.
-     * To know more about the “SameSite“ attribute, read
-     * https://developer.mozilla.org/docs/Web/HTTP/Headers/Set-Cookie/SameSite
-     */
     addSameSiteCookieAttribute(response);
 
     String username = ((org.springframework.security.core.userdetails.User) authentication.getPrincipal())
         .getUsername();
 
-    // add a 'u' session variable, accessible from thymeleaf via ${session.u}
-    log.info("Storing user info for {} in session {}", username, session.getId());
-    User u = entityManager.createNamedQuery("User.byUsername", User.class)
-        .setParameter("username", username)
+    log.info(“Storing user info for {} in session {}”, username, session.getId());
+    User u = entityManager.createNamedQuery(“User.byUsername”, User.class)
+        .setParameter(“username”, username)
         .getSingleResult();
-    session.setAttribute("u", u);
+    session.setAttribute(“u”, u);
 
-    // add 'url' and 'ws' session variables
-    // example URLS: Root URL
-    // http://localhost:8080/ //localhost:8080/
-    // http://localhost:8080/abc/ //localhost:8080/abc/
-    // https://vmXY.containers.fdi.ucm.es/ //vmXY.containers.fdi.ucm.es/
-    //
+    // Calcula URL base y WebSocket eliminando el protocolo (ej. //host:puerto/ctx/)
+    // En el entorno UCM se usa wss:// en lugar de ws://
     String url = request.getRequestURL().toString()
-        .replaceFirst("/[^/]*$", "") // ...foo/bar => ...foo/
-        .replaceFirst("[^/]*", ""); // http[s]://...foo/ => //...foo/
-    String ws = "ws:" + url + "/ws"; // //...foo/ => ws://...foo/ws
-    if (url.contains("ucm.es")) {
-      ws = ws.replace("ws:", "wss:"); // for deployment in containers
+        .replaceFirst(“/[^/]*$”, “”)
+        .replaceFirst(“[^/]*”, “”);
+    String ws = “ws:” + url + “/ws”;
+    if (url.contains(“ucm.es”)) {
+      ws = ws.replace(“ws:”, “wss:”);
     }
-    session.setAttribute("url", url);
-    session.setAttribute("ws", ws);
+    session.setAttribute(“url”, url);
+    session.setAttribute(“ws”, ws);
 
-    // add subscribed topics from groups
-    List<String> topics = entityManager.createNamedQuery("User.topics", String.class)
-        .setParameter("id", u.getId())
+    List<String> topics = entityManager.createNamedQuery(“User.topics”, String.class)
+        .setParameter(“id”, u.getId())
         .getResultList();
-    session.setAttribute("topics", String.join(",", topics));
+    session.setAttribute(“topics”, String.join(“,”, topics));
 
-    // redirects to 'admin' or 'user/{id}', depending on the user
-    String nextUrl = u.hasRole(User.Role.ADMIN) ? "admin/" : "user/" + u.getId();
+    String nextUrl = u.hasRole(User.Role.ADMIN) ? “admin/” : “user/” + u.getId();
 
-    log.info("LOG IN: {} (id {}) -- session is {}, websocket is {} -- redirected to {}",
+    log.info(“LOG IN: {} (id {}) -- session is {}, websocket is {} -- redirected to {}”,
         u.getUsername(), u.getId(), session.getId(), ws, nextUrl);
 
-    // note that this is a 302, and will result in a new request
     response.sendRedirect(nextUrl);
   }
 
   /**
-   * Set samesite cookie - see https://stackoverflow.com/a/58996747/15472
-   * 
-   * @param response
+   * Añade el atributo {@code SameSite=Strict} a todas las cabeceras
+   * {@code Set-Cookie} de la respuesta para evitar que el navegador rechace
+   * la cookie de sesión en contextos de terceros.
+   *
+   * @param response respuesta HTTP sobre la que se modifican las cabeceras
    */
   private void addSameSiteCookieAttribute(HttpServletResponse response) {
     Collection<String> headers = response.getHeaders(HttpHeaders.SET_COOKIE);

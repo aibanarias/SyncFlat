@@ -46,9 +46,11 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * User management.
- *
- * Access to this end-point is authenticated.
+ * Controlador de gestión de usuarios.
+ * <p>
+ * Cubre el perfil de usuario (consulta, edición, foto), el envío de mensajes
+ * directos mediante WebSocket y la consulta de mensajes recibidos.
+ * El acceso a {@code /user/**} está restringido al rol USER por configuración.
  */
 @Controller()
 @RequestMapping("user")
@@ -76,45 +78,38 @@ public class UserController {
   }
 
   /**
-   * Exception to use when denying access to unauthorized users.
-   * 
-   * In general, admins are always authorized, but users cannot modify
-   * each other's profiles.
+   * Se lanza cuando un usuario intenta modificar un perfil que no es el suyo
+   * y tampoco tiene rol ADMIN. Devuelve HTTP 403.
    */
-  @ResponseStatus(value = HttpStatus.FORBIDDEN, reason = "No eres administrador, y éste no es tu perfil") // 403
+  @ResponseStatus(value = HttpStatus.FORBIDDEN, reason = "No eres administrador, y éste no es tu perfil")
   public static class NoEsTuPerfilException extends RuntimeException {
   }
 
   /**
-   * Encodes a password, so that it can be saved for future checking. Notice
-   * that encoding the same password multiple times will yield different
-   * encodings, since encodings contain a randomly-generated salt.
-   * 
-   * @param rawPassword to encode
-   * @return the encoded password (typically a 60-character string)
-   *         for example, a possible encoding of "test" is
-   *         {bcrypt}$2y$12$XCKz0zjXAP6hsFyVc8MucOzx6ER6IsC1qo5zQbclxhddR1t6SfrHm
+   * Codifica una contraseña en claro usando BCrypt con sal aleatoria.
+   * Cada llamada produce un hash diferente aunque la contraseña sea la misma.
+   *
+   * @param rawPassword contraseña en claro
+   * @return hash almacenable (prefijado con el identificador del algoritmo)
    */
   public String encodePassword(String rawPassword) {
     return passwordEncoder.encode(rawPassword);
   }
 
   /**
-   * Generates random tokens. From https://stackoverflow.com/a/44227131/15472
-   * 
-   * @param byteLength
-   * @return
+   * Genera un token aleatorio criptográficamente seguro codificado en Base64 URL-safe.
+   *
+   * @param byteLength número de bytes de entropía
+   * @return cadena Base64 sin relleno
    */
   public static String generateRandomBase64Token(int byteLength) {
     SecureRandom secureRandom = new SecureRandom();
     byte[] token = new byte[byteLength];
     secureRandom.nextBytes(token);
-    return Base64.getUrlEncoder().withoutPadding().encodeToString(token); // base64 encoding
+    return Base64.getUrlEncoder().withoutPadding().encodeToString(token);
   }
 
-  /**
-   * Landing page for a user profile
-   */
+  /** Vista del perfil de usuario. */
   @GetMapping("{id}")
   public String index(@PathVariable long id, Model model, HttpSession session) {
     User target = entityManager.find(User.class, id);
@@ -123,7 +118,14 @@ public class UserController {
   }
 
   /**
-   * Alter or create a user
+   * Crea o actualiza un usuario.
+   * <p>
+   * Con {@code id == -1} y rol ADMIN se crea un usuario nuevo con contraseña aleatoria.
+   * En cualquier otro caso se actualiza el usuario existente. Un usuario solo puede
+   * editar su propio perfil; los administradores pueden editar cualquiera.
+   * Si se cambia la contraseña y las dos copias no coinciden, se devuelve 400.
+   *
+   * @param id identificador del usuario a modificar, o {@code -1} para crear uno nuevo
    */
   @PostMapping("/{id}")
   @Transactional
@@ -137,16 +139,14 @@ public class UserController {
     User requester = (User) session.getAttribute("u");
     User target = null;
     if (id == -1 && requester.hasRole(Role.ADMIN)) {
-      // create new user with random password
       target = new User();
       target.setPassword(encodePassword(generateRandomBase64Token(12)));
       target.setEnabled(true);
       entityManager.persist(target);
-      entityManager.flush(); // forces DB to add user & assign valid id
-      id = target.getId(); // retrieve assigned id from DB
+      entityManager.flush();
+      id = target.getId();
     }
 
-    // retrieve requested user
     target = entityManager.find(User.class, id);
     model.addAttribute("user", target);
 
@@ -162,7 +162,6 @@ public class UserController {
         model.addAttribute("user", target);
         return "user";
       } else {
-        // save encoded version of password
         target.setPassword(encodePassword(edited.getPassword()));
       }
     }
@@ -170,7 +169,7 @@ public class UserController {
     target.setFirstName(edited.getFirstName());
     target.setLastName(edited.getLastName());
 
-    // update user session so that changes are persisted in the session, too
+    // Si el usuario edita su propio perfil, actualizar también el objeto en sesión
     if (requester.getId() == target.getId()) {
       session.setAttribute("u", target);
     }
@@ -178,11 +177,7 @@ public class UserController {
     return "user";
   }
 
-  /**
-   * Returns the default profile pic
-   * 
-   * @return
-   */
+  /** Devuelve el stream de la imagen de perfil por defecto desde el classpath. */
   private static InputStream defaultPic() {
     return new BufferedInputStream(Objects.requireNonNull(
         UserController.class.getClassLoader().getResourceAsStream(
@@ -190,11 +185,10 @@ public class UserController {
   }
 
   /**
-   * Downloads a profile pic for a user id
-   * 
-   * @param id
-   * @return
-   * @throws IOException
+   * Descarga la foto de perfil de un usuario. Si no tiene foto subida,
+   * devuelve la imagen por defecto.
+   *
+   * @param id identificador del usuario
    */
   @GetMapping("{id}/pic")
   public StreamingResponseBody getPic(@PathVariable long id) throws IOException {
@@ -204,11 +198,10 @@ public class UserController {
   }
 
   /**
-   * Uploads a profile pic for a user id
-   * 
-   * @param id
-   * @return
-   * @throws IOException
+   * Sube una nueva foto de perfil para el usuario indicado.
+   * Solo el propio usuario o un administrador pueden subir la foto.
+   *
+   * @param id identificador del usuario
    */
   @PostMapping("{id}/pic")
   @ResponseBody
@@ -218,7 +211,6 @@ public class UserController {
     User target = entityManager.find(User.class, id);
     model.addAttribute("user", target);
 
-    // check permissions
     User requester = (User) session.getAttribute("u");
     if (requester.getId() != target.getId() &&
         !requester.hasRole(Role.ADMIN)) {
@@ -249,12 +241,10 @@ public class UserController {
     return "error";
   }
 
-  /**
-   * Returns JSON with all received messages
-   */
+  /** Devuelve la lista de mensajes recibidos por el usuario en sesión. */
   @GetMapping(path = "received", produces = "application/json")
-  @Transactional // para no recibir resultados inconsistentes
-  @ResponseBody // para indicar que no devuelve vista, sino un objeto (jsonizado)
+  @Transactional
+  @ResponseBody
   public List<Message.Transfer> retrieveMessages(HttpSession session) {
     long userId = ((User) session.getAttribute("u")).getId();
     User u = entityManager.find(User.class, userId);
@@ -263,9 +253,7 @@ public class UserController {
     return u.getReceived().stream().map(Transferable::toTransfer).collect(Collectors.toList());
   }
 
-  /**
-   * Returns JSON with count of unread messages
-   */
+  /** Devuelve el número de mensajes no leídos y lo actualiza en sesión. */
   @GetMapping(path = "unread", produces = "application/json")
   @ResponseBody
   public String checkUnread(HttpSession session) {
@@ -278,11 +266,12 @@ public class UserController {
   }
 
   /**
-   * Posts a message to a user.
-   * 
-   * @param id of target user (source user is from ID)
-   * @param o  JSON-ized message, similar to {"message": "text goes here"}
-   * @throws JsonProcessingException
+   * Envía un mensaje directo a un usuario, lo persiste en base de datos
+   * y lo reenvía por WebSocket al destinatario mediante su cola personal.
+   *
+   * @param id identificador del usuario destinatario
+   * @param o  JSON con el campo {@code message}
+   * @throws JsonProcessingException si la serialización falla
    */
   @PostMapping("/{id}/msg")
   @ResponseBody
@@ -297,27 +286,15 @@ public class UserController {
         User.class, ((User) session.getAttribute("u")).getId());
     model.addAttribute("user", u);
 
-    // construye mensaje, lo guarda en BD
     Message m = new Message();
     m.setRecipient(u);
     m.setSender(sender);
     m.setDateSent(LocalDateTime.now());
     m.setText(text);
     entityManager.persist(m);
-    entityManager.flush(); // to get Id before commit
+    entityManager.flush();
 
-    ObjectMapper mapper = new ObjectMapper();
-    /*
-     * // construye json: método manual
-     * ObjectNode rootNode = mapper.createObjectNode();
-     * rootNode.put("from", sender.getUsername());
-     * rootNode.put("to", u.getUsername());
-     * rootNode.put("text", text);
-     * rootNode.put("id", m.getId());
-     * String json = mapper.writeValueAsString(rootNode);
-     */
-    // persiste objeto a json usando Jackson
-    String json = mapper.writeValueAsString(m.toTransfer());
+    String json = new ObjectMapper().writeValueAsString(m.toTransfer());
 
     log.info("Sending a message to {} with contents '{}'", id, json);
 

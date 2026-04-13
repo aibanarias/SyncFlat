@@ -145,3 +145,65 @@ Scenario: usuario normal no accede a administracion
     Given path 'admin/'
     When method get
     Then status 403
+
+# Escenario 9: crear un gasto y verificar que aparece en el listado
+# Prueba de negocio: el POST persiste en H2 y el GET siguiente lo muestra
+Scenario: crear gasto y comprobar que aparece en el listado
+    Given path 'login'
+    When method get
+    Then status 200
+    * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
+
+    Given path 'login'
+    And form field username = 'a'
+    And form field password = 'aa'
+    And form field _csrf = csrf
+    When method post
+    Then status 200
+
+    # Obtener CSRF del formulario de gastos (token post-autenticación)
+    Given path 'modulos/gastos'
+    When method get
+    Then status 200
+    * def csrfGasto = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
+
+    # Crear gasto vía POST — debe redirigir a GET /modulos/gastos con el nuevo gasto
+    Given path 'modulos/gastos'
+    And form field concepto = 'Gasto test Karate'
+    And form field importe = '60.00'
+    And form field _csrf = csrfGasto
+    When method post
+    Then status 200
+    And match response contains 'Gasto test Karate'
+
+# Escenario 10: crear una tarea y verificar que aparece en el listado
+# Prueba de negocio: el POST persiste la tarea en H2 y el GET la lista
+Scenario: crear tarea y comprobar que aparece en el listado
+    Given path 'login'
+    When method get
+    Then status 200
+    * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
+
+    Given path 'login'
+    And form field username = 'a'
+    And form field password = 'aa'
+    And form field _csrf = csrf
+    When method post
+    Then status 200
+
+    # Obtener CSRF del formulario de tareas
+    Given path 'modulos/tareas'
+    When method get
+    Then status 200
+    * def csrfTarea = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
+
+    # Crear tarea vía POST — debe redirigir a GET /modulos/tareas con la nueva tarea
+    Given path 'modulos/tareas'
+    And form field nombre = 'Tarea test Karate'
+    And form field descripcion = 'Tarea creada por prueba automatizada'
+    And form field tipo = 'PUNTUAL'
+    And form field fechaLimite = '2026-12-31'
+    And form field _csrf = csrfTarea
+    When method post
+    Then status 200
+    And match response contains 'Tarea test Karate'

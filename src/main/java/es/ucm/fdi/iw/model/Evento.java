@@ -9,6 +9,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
+/**
+ * Evento del calendario compartido de un piso.
+ * <p>
+ * La asistencia de cada miembro se gestiona mediante {@link AsistenciaEvento},
+ * que puede estar en estado PENDIENTE, CONFIRMADO o RECHAZADO.
+ */
 @Entity
 public class Evento {
 

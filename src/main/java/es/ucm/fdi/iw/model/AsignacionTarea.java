@@ -9,6 +9,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
+/**
+ * Asignación de una tarea a un usuario concreto.
+ * <p>
+ * {@code fechaCompletada} nula indica que la tarea está pendiente; cuando se
+ * rellena, la tarea se considera completada. El campo {@code validada} permite
+ * que otro miembro del piso confirme la realización.
+ */
 @Entity
 public class AsignacionTarea {
 

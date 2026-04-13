@@ -11,6 +11,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
+/**
+ * Relación entre un usuario y un piso.
+ * <p>
+ * Almacena el rol del usuario dentro del piso ({@link RolPiso}), la fecha de ingreso
+ * y, opcionalmente, la fecha de salida. La ausencia de fecha de salida indica
+ * que el usuario sigue activo en el piso.
+ */
 @Entity
 public class MiembroPiso {
 

@@ -11,6 +11,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
+/**
+ * Tarea doméstica definida en el contexto de un piso.
+ * <p>
+ * Una tarea puede ser puntual o periódica (campo {@code frecuencia}) y se
+ * asigna a uno o varios miembros mediante {@link AsignacionTarea}.
+ */
 @Entity
 public class Tarea {
 

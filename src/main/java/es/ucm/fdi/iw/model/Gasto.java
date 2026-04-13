@@ -12,6 +12,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
+/**
+ * Gasto compartido registrado en el piso.
+ * <p>
+ * El pagador es quien ha desembolsado el importe; los participantes
+ * ({@link ParticipanteGasto}) registran cuánto debe aportar cada miembro.
+ * El estado del gasto ({@link EstadoGasto}) refleja si está pendiente de
+ * liquidación o ya ha sido saldado.
+ */
 @Entity
 public class Gasto {
 

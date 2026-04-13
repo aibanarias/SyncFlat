@@ -9,6 +9,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
+/**
+ * Participación de un usuario en un gasto compartido.
+ * <p>
+ * Registra el importe que corresponde abonar al usuario y si ya lo ha pagado.
+ * El pagador original del gasto queda marcado con {@code pagado = true} en
+ * el momento de crear los participantes.
+ */
 @Entity
 public class ParticipanteGasto {
 

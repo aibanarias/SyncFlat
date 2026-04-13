@@ -9,6 +9,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 
+/**
+ * Respuesta de un usuario a un evento del calendario.
+ * El estado ({@link EstadoAsistencia}) puede cambiar cíclicamente:
+ * PENDIENTE → CONFIRMADO → RECHAZADO → PENDIENTE.
+ */
 @Entity
 public class AsistenciaEvento {
 

@@ -29,9 +29,11 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
 
 /**
- * Site administration.
- *
- * Access to this end-point is authenticated - see SecurityConfig
+ * Controlador de administración.
+ * <p>
+ * Agrupa las operaciones reservadas al rol ADMIN: listado de usuarios,
+ * activación/desactivación y carga de datos de prueba.
+ * El acceso está restringido por {@link es.ucm.fdi.iw.SecurityConfig}.
  */
 @Controller
 @RequestMapping("admin")
@@ -71,26 +73,29 @@ public class AdminController {
   }
 
   /**
-   * Returns JSON with all received messages
+   * Devuelve los últimos mensajes del sistema en formato JSON.
+   * El parámetro {@code setFirstResult} permite paginar cambiando el offset.
    */
   @GetMapping(path = "all-messages", produces = "application/json")
-  @Transactional // para no recibir resultados inconsistentes
-  @ResponseBody // para indicar que no devuelve vista, sino un objeto (jsonizado)
+  @Transactional
+  @ResponseBody
   public List<Message.Transfer> retrieveMessages(HttpSession session) {
     TypedQuery<Message> query = entityManager.createQuery("select m from Message m", Message.class);
     query.setMaxResults(5);
-    query.setFirstResult(0); // para paginar: cambias el 1er resultado
-    // devuelve resultado
+    query.setFirstResult(0);
     return query.getResultList().stream().map(Transferable::toTransfer)
         .collect(Collectors.toList());
   }
 
+  /**
+   * Carga datos de prueba: dos grupos y 15 usuarios con contraseña {@code aa}.
+   * Solo para desarrollo; no debe estar expuesto en producción.
+   */
   @RequestMapping("/populate")
   @ResponseBody
   @Transactional
   public String populate(Model model) {
 
-    // create some groups
     Topic g1 = new Topic();
     g1.setName("g1");
     g1.setKey(UserController.generateRandomBase64Token(6));
@@ -100,13 +105,10 @@ public class AdminController {
     g2.setKey(UserController.generateRandomBase64Token(6));
     entityManager.persist(g2);
 
-    // create some users & assign to groups
     for (int i = 0; i < 15; i++) {
       User u = new User();
       u.setUsername("user" + i);
-      u.setPassword(passwordEncoder
-          .encode("aa"));
-            //UserController.generateRandomBase64Token(9)));
+      u.setPassword(passwordEncoder.encode("aa"));
       u.setEnabled(true);
       u.setRoles(User.Role.USER.toString());
       u.setFirstName(Lorem.nombreAlAzar());
@@ -114,7 +116,7 @@ public class AdminController {
       entityManager.persist(u);
       if (i%2 == 0) {
         g1.getMembers().add(u);
-        // u.getTopics().add(g1); NO FUNCIONA: propietario es g, no u
+        // La relación ManyToMany es propiedad de Topic, no de User
       }
       if (i%3 == 0) {
         g2.getMembers().add(u);

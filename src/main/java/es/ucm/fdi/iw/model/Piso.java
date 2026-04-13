@@ -7,6 +7,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
+/**
+ * Unidad habitacional que agrupa a varios usuarios (miembros).
+ * Es la entidad raíz del dominio: gastos, tareas, eventos y listas de compra
+ * pertenecen siempre a un piso concreto.
+ */
 @Entity
 public class Piso {
 

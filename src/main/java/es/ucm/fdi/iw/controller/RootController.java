@@ -1,6 +1,7 @@
 package es.ucm.fdi.iw.controller;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,7 +28,11 @@ import jakarta.transaction.Transactional;
 
 /**
  * Controlador principal de SyncFlat.
- * Gestiona las rutas públicas y los módulos funcionales del piso.
+ * <p>
+ * Gestiona las rutas públicas (login, índice, autores) y todos los módulos
+ * funcionales del piso: home, gastos, lista de compra, tareas y calendario.
+ * El piso del usuario se resuelve en cada petición a partir de la sesión,
+ * de modo que no se almacena estado entre peticiones.
  */
 @Controller
 public class RootController {
@@ -44,11 +49,9 @@ public class RootController {
         }
     }
 
-    // ======== Utilidad: resolver piso del usuario logueado ========
-
     /**
-     * Busca el piso al que pertenece el usuario logueado.
-     * Devuelve null si no hay usuario en sesión o no pertenece a ningún piso.
+     * Devuelve el piso al que pertenece el usuario en sesión,
+     * o {@code null} si no hay sesión activa o el usuario no está en ningún piso.
      */
     private Piso resolverPiso(HttpSession session) {
         User u = (User) session.getAttribute("u");
@@ -60,8 +63,6 @@ public class RootController {
                 .getResultList();
         return memberships.isEmpty() ? null : memberships.get(0).getPiso();
     }
-
-    // ======== Páginas públicas ========
 
     @GetMapping("/login")
     public String login(Model model, HttpServletRequest request) {
@@ -80,7 +81,7 @@ public class RootController {
         return "autores";
     }
 
-    // ======== MÓDULO HOME: Dashboard del piso ========
+    // --- MÓDULO HOME ---
 
     @GetMapping("/modulos/home")
     public String home(Model model, HttpSession session) {
@@ -129,7 +130,7 @@ public class RootController {
         return "home";
     }
 
-    // ======== MÓDULO GASTOS ========
+    // --- MÓDULO GASTOS ---
 
     @GetMapping("/modulos/gastos")
     public String gastos(Model model, HttpSession session) {
@@ -161,6 +162,12 @@ public class RootController {
         return "gastos";
     }
 
+    /**
+     * Registra un nuevo gasto y reparte su importe a partes iguales entre todos
+     * los miembros del piso. El pagador queda marcado como {@code pagado = true}
+     * en su registro de participante. Se hace {@code flush} antes de crear los
+     * participantes para garantizar que el gasto ya tiene id asignado.
+     */
     @PostMapping("/modulos/gastos")
     @Transactional
     public String crearGasto(@RequestParam String concepto,
@@ -171,20 +178,47 @@ public class RootController {
         if (u == null || piso == null)
             return "redirect:/login";
 
+        // Validación básica del servidor
+        if (concepto == null || concepto.isBlank())
+            return "redirect:/modulos/gastos";
+        if (importe == null || importe.compareTo(BigDecimal.ZERO) <= 0)
+            return "redirect:/modulos/gastos";
+
         Gasto g = new Gasto();
-        g.setConcepto(concepto);
+        g.setConcepto(concepto.trim());
         g.setImporte(importe);
         g.setFecha(LocalDate.now());
         g.setPagador(entityManager.find(User.class, u.getId()));
         g.setPiso(piso);
         g.setEstado(EstadoGasto.PENDIENTE);
         entityManager.persist(g);
+        entityManager.flush(); // necesario para que g tenga id antes de crear participantes
 
-        log.info("Gasto creado: '{}' por {} — {} €", concepto, u.getUsername(), importe);
+        // Repartir el importe entre los miembros del piso a partes iguales
+        List<MiembroPiso> miembros = entityManager
+                .createQuery("SELECT mp FROM MiembroPiso mp WHERE mp.piso.id = :pid", MiembroPiso.class)
+                .setParameter("pid", piso.getId())
+                .getResultList();
+
+        if (!miembros.isEmpty()) {
+            BigDecimal cuota = importe.divide(BigDecimal.valueOf(miembros.size()), 2, RoundingMode.HALF_UP);
+            for (MiembroPiso mp : miembros) {
+                ParticipanteGasto pg = new ParticipanteGasto();
+                pg.setGasto(g);
+                pg.setUsuario(mp.getUsuario());
+                pg.setImporteAsignado(cuota);
+                // El pagador ya ha desembolsado su parte
+                pg.setPagado(mp.getUsuario().getId() == u.getId());
+                entityManager.persist(pg);
+            }
+        }
+
+        log.info("Gasto '{}' creado por {} — {} €, repartido entre {} miembros",
+                concepto.trim(), u.getUsername(), importe, miembros.size());
         return "redirect:/modulos/gastos";
     }
 
-    // ======== MÓDULO COMPRA ========
+    // --- MÓDULO COMPRA ---
 
     @GetMapping("/modulos/compra")
     public String compra(Model model, HttpSession session) {
@@ -262,7 +296,7 @@ public class RootController {
         return Map.of("comprado", item.isComprado());
     }
 
-    // ======== MÓDULO TAREAS ========
+    // --- MÓDULO TAREAS ---
 
     @GetMapping("/modulos/tareas")
     public String tareas(Model model, HttpSession session) {
@@ -293,6 +327,10 @@ public class RootController {
         return "tareas";
     }
 
+    /**
+     * Crea una nueva tarea en el piso y, opcionalmente, genera una asignación
+     * si se ha seleccionado un miembro responsable.
+     */
     @PostMapping("/modulos/tareas")
     @Transactional
     public String crearTarea(@RequestParam String nombre,
@@ -306,6 +344,9 @@ public class RootController {
         Piso piso = resolverPiso(session);
         if (u == null || piso == null)
             return "redirect:/login";
+
+        if (nombre == null || nombre.isBlank() || fechaLimite == null || fechaLimite.isBlank())
+            return "redirect:/modulos/tareas";
 
         Tarea t = new Tarea();
         t.setNombre(nombre);
@@ -353,7 +394,7 @@ public class RootController {
         return Map.of("completada", at.getFechaCompletada() != null);
     }
 
-    // ======== MÓDULO CALENDARIO ========
+    // --- MÓDULO CALENDARIO ---
 
     @GetMapping("/modulos/calendario")
     public String calendario(Model model, HttpSession session) {
@@ -396,16 +437,73 @@ public class RootController {
         if (u == null || piso == null)
             return "redirect:/login";
 
+        if (titulo == null || titulo.isBlank())
+            return "redirect:/modulos/calendario";
+        LocalDateTime inicio = LocalDateTime.parse(fechaInicio);
+        LocalDateTime fin = LocalDateTime.parse(fechaFin);
+        if (!fin.isAfter(inicio))
+            return "redirect:/modulos/calendario";
+
         Evento e = new Evento();
-        e.setTitulo(titulo);
+        e.setTitulo(titulo.trim());
         e.setDescripcion(descripcion);
-        e.setFechaInicio(LocalDateTime.parse(fechaInicio));
-        e.setFechaFin(LocalDateTime.parse(fechaFin));
+        e.setFechaInicio(inicio);
+        e.setFechaFin(fin);
         e.setCreador(entityManager.find(User.class, u.getId()));
         e.setPiso(piso);
         entityManager.persist(e);
 
-        log.info("Evento creado: '{}' en piso {}", titulo, piso.getNombre());
+        log.info("Evento creado: '{}' en piso {}", titulo.trim(), piso.getNombre());
         return "redirect:/modulos/calendario";
+    }
+
+    /**
+     * Alterna la asistencia del usuario a un evento de forma cíclica:
+     * si no existe registro previo se crea como CONFIRMADO; si ya existe,
+     * rota CONFIRMADO → RECHAZADO → PENDIENTE → CONFIRMADO.
+     * Devuelve el nuevo estado como JSON para que el cliente lo refleje
+     * sin recargar la página.
+     *
+     * @param eventoId identificador del evento
+     */
+    @PostMapping("/modulos/calendario/asistencia/{eventoId}")
+    @Transactional
+    @ResponseBody
+    public Map<String, Object> toggleAsistencia(@PathVariable long eventoId, HttpSession session) {
+        User u = (User) session.getAttribute("u");
+        if (u == null)
+            return Map.of("error", "no autorizado");
+
+        List<AsistenciaEvento> existing = entityManager
+                .createQuery(
+                        "SELECT ae FROM AsistenciaEvento ae WHERE ae.evento.id = :eid AND ae.usuario.id = :uid",
+                        AsistenciaEvento.class)
+                .setParameter("eid", eventoId)
+                .setParameter("uid", u.getId())
+                .getResultList();
+
+        EstadoAsistencia nuevoEstado;
+        if (existing.isEmpty()) {
+            Evento evento = entityManager.find(Evento.class, eventoId);
+            if (evento == null)
+                return Map.of("error", "evento no encontrado");
+            AsistenciaEvento ae = new AsistenciaEvento();
+            ae.setEvento(evento);
+            ae.setUsuario(entityManager.find(User.class, u.getId()));
+            ae.setEstado(EstadoAsistencia.CONFIRMADO);
+            entityManager.persist(ae);
+            nuevoEstado = EstadoAsistencia.CONFIRMADO;
+        } else {
+            AsistenciaEvento ae = existing.get(0);
+            nuevoEstado = switch (ae.getEstado()) {
+                case PENDIENTE -> EstadoAsistencia.CONFIRMADO;
+                case CONFIRMADO -> EstadoAsistencia.RECHAZADO;
+                case RECHAZADO -> EstadoAsistencia.PENDIENTE;
+            };
+            ae.setEstado(nuevoEstado);
+        }
+
+        log.info("Asistencia de {} al evento {} -> {}", u.getUsername(), eventoId, nuevoEstado);
+        return Map.of("estado", nuevoEstado.name());
     }
 }

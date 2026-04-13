@@ -1,187 +1,206 @@
 # SyncFlat — Gestión integral para pisos compartidos
 
-## ¿Qué es SyncFlat?
+Aplicación web para coordinar la convivencia en un piso compartido: gastos, tareas, compras, calendario y mensajería. Desarrollada como práctica de la asignatura **Ingeniería Web (IW 2024-25)** de la UCM/FDI.
 
-SyncFlat es una aplicación web orientada a personas que **comparten piso** y necesitan coordinar de forma clara y justa el dinero, la organización doméstica y el tiempo. El sistema se estructura en módulos independientes pero conectados entre sí.
+## Tecnologías
 
-## Funcionalidades actuales (entrega)
-
-- **Página de inicio** (`/`): presentación del proyecto y enlaces a los módulos.
-- **Módulo de Gastos** (`/modulos/gastos`): descripción de la funcionalidad de control de gastos compartidos.
-- **Módulo de Compra** (`/modulos/compra`): organización de compras y reparto flexible.
-- **Módulo Home** (`/modulos/home`): panel de control centralizado del piso.
-- **Módulo de Tareas** (`/modulos/tareas`): gestión de tareas domésticas con **demo JavaScript interactiva** (botón que añade ítems a una lista sin backend).
-- **Módulo de Calendario** (`/modulos/calendario`): planificación y disponibilidad compartida.
-- **Autores** (`/autores`): información sobre el autor del proyecto.
-- **Login y seguridad**: autenticación con formulario; botones de debug para login rápido (usuarios A y B).
-- **Administración** (`/admin/`): visible solo para usuarios con rol ADMIN.
+| Capa | Tecnología |
+|------|-----------|
+| Backend | Spring Boot 3.4.3 + Spring MVC |
+| Persistencia | JPA / Hibernate + H2 (embebida) |
+| Seguridad | Spring Security 6 (roles, CSRF, sesiones) |
+| Tiempo real | WebSocket + STOMP |
+| Vistas | Thymeleaf 3 + Bootstrap 5.3.3 |
+| Tests | Karate 1.4.1 (JUnit 5) |
+| Build | Maven + Java 21 |
 
 ## Cómo ejecutar
 
-### Requisitos
-- **Java 21** (JDK)
-- **Maven 3.8+** (o usar el wrapper `mvnw` si está disponible)
-
-### Comandos
+**Requisitos:** JDK 21 y Maven 3.8+.
 
 ```bash
-# Desde la raíz del repositorio
+# Desde la raíz del proyecto
 mvn spring-boot:run
 ```
 
-La aplicación se inicia en **http://localhost:8080**.
+La aplicación arranca en **http://localhost:8080**.
+
+En modo desarrollo (por defecto) se usa una base de datos H2 en memoria. Los datos se crean al arrancar desde `src/main/resources/import.sql` y se pierden al parar la aplicación.
+
+La consola H2 está disponible en **http://localhost:8080/h2** (solo en modo debug).
+
+### Usuarios de prueba
+
+| Usuario | Contraseña | Rol |
+|---------|-----------|-----|
+| `a` | `aa` | ADMIN + USER |
+| `b` | `aa` | USER |
+
+Ambos pertenecen al **Piso Moncloa** (`id=1`), que tiene datos de prueba cargados al arrancar.
+
+En modo debug, la barra de navegación muestra botones de login rápido para `a` y `b`.
+
+## Base de datos y modelo JPA
+
+El esquema se genera automáticamente por Hibernate a partir de las entidades (`ddl-auto=create-drop`). Los datos iniciales se cargan desde `import.sql`.
+
+### Entidades (15) y enumerados (5)
+
+| Entidad | Descripción |
+|---------|------------|
+| `User` | Usuario del sistema. Roles: `USER`, `ADMIN` |
+| `Piso` | Piso compartido (entidad central) |
+| `MiembroPiso` | Relación usuario-piso con rol (`PROPIETARIO`, `INQUILINO`) |
+| `Gasto` | Gasto registrado por un pagador. Estado: `PENDIENTE`, `LIQUIDADO` |
+| `ParticipanteGasto` | Parte que corresponde a cada miembro en un gasto |
+| `Liquidacion` | Cierre de período de gastos del piso |
+| `Tarea` | Tarea doméstica. Tipo: `PUNTUAL`, `RECURRENTE` |
+| `AsignacionTarea` | Asignación de una tarea a un usuario concreto |
+| `ListaCompra` | Lista de la compra del piso |
+| `ItemListaCompra` | Ítem dentro de una lista de la compra |
+| `Producto` | Producto del catálogo del piso |
+| `Compra` | Compra realizada sobre una lista |
+| `Evento` | Evento del calendario del piso |
+| `AsistenciaEvento` | Respuesta de un usuario a un evento (`PENDIENTE`, `CONFIRMADO`, `RECHAZADO`) |
+| `Ausencia` | Período de ausencia de un miembro |
+| `Alerta` | Aviso del piso. Tipo: `INFO`, `URGENTE`, `RECORDATORIO` |
+| `Message` | Mensaje entre usuarios (plantilla) |
+| `Topic` | Canal de mensajería (plantilla) |
+
+El diagrama ER de referencia está en `bd.png`.
 
 ## Estructura del proyecto
 
 ```
-├── pom.xml                          # Configuración Maven
-├── README.md                        # Este fichero
-├── src/
-│   ├── main/
-│   │   ├── java/es/ucm/fdi/iw/
-│   │   │   ├── controller/
-│   │   │   │   ├── RootController.java      # Endpoints principales
-│   │   │   │   ├── AdminController.java     # Panel de administración
-│   │   │   │   ├── UserController.java      # Gestión de usuarios
-│   │   │   │   └── ApiController.java       # API REST
-│   │   │   ├── model/                       # Entidades JPA
-│   │   │   ├── SecurityConfig.java          # Configuración de seguridad
-│   │   │   ├── LoginSuccessHandler.java     # Handler post-login
-│   │   │   ├── StartupConfig.java           # Configuración inicial
-│   │   │   └── IwApplication.java           # Punto de entrada
-│   │   └── resources/
-│   │       ├── application.properties       # Configuración de la app
-│   │       ├── templates/
-│   │       │   ├── fragments/               # Fragmentos Thymeleaf (head, nav, footer)
-│   │       │   ├── index.html               # Página principal
-│   │       │   ├── login.html               # Formulario de login
-│   │       │   ├── gastos.html, compra.html, home.html, tareas.html, calendario.html
-│   │       │   ├── autores.html             # Info del autor
-│   │       │   └── admin.html, user.html, error.html
-│   │       └── static/
-│   │           ├── css/                     # Estilos (Bootstrap 5.3.3 + custom.css)
-│   │           ├── js/                      # Scripts (Bootstrap, WebSocket, utilidades)
-│   │           └── img/                     # Imágenes (logo, favicon, fotos)
-│   └── test/                                # Tests (JUnit, Karate)
+src/
+├── main/
+│   ├── java/es/ucm/fdi/iw/
+│   │   ├── IwApplication.java           # Punto de entrada
+│   │   ├── SecurityConfig.java          # Seguridad HTTP y roles
+│   │   ├── WebSocketConfig.java         # Broker STOMP
+│   │   ├── LoginSuccessHandler.java     # Redirect post-login
+│   │   ├── IwUserDetailsService.java    # Carga usuarios desde JPA
+│   │   ├── AppConfig.java               # Beans auxiliares
+│   │   ├── StartupConfig.java           # Lee es.ucm.fdi.debug
+│   │   ├── controller/
+│   │   │   ├── RootController.java      # Módulos principales (gastos, tareas, compra, calendario, home)
+│   │   │   ├── UserController.java      # Perfil, mensajería, fotos
+│   │   │   ├── AdminController.java     # Panel de administración
+│   │   │   └── ApiController.java       # API REST pública
+│   │   └── model/                       # 15 entidades JPA + 5 enums
+│   └── resources/
+│       ├── application.properties       # Configuración desarrollo (H2 en memoria)
+│       ├── application-container.properties  # Configuración producción (H2 fichero)
+│       ├── import.sql                   # Datos iniciales de prueba
+│       └── templates/
+│           ├── fragments/               # head.html, nav.html, footer.html
+│           ├── index.html, login.html, autores.html, error.html
+│           ├── home.html, gastos.html, compra.html, tareas.html, calendario.html
+│           ├── user.html, admin.html
+│           └── static/css, js, img/     # Bootstrap 5.3.3, iw.js, stomp.js
+└── test/
+    └── java/es/ucm/fdi/iw/
+        ├── PruebaTest.java              # Runner JUnit 5 de Karate
+        └── prueba.feature               # 10 escenarios Karate
 ```
 
-## Login y roles (debug)
+## Rutas principales
 
-La aplicación incluye **botones de login rápido** (visibles solo en modo debug):
+Todas las rutas de `/modulos/**` requieren autenticación. Un usuario sin sesión es redirigido automáticamente a `/login`.
 
-| Botón | Usuario | Contraseña | Roles |
-|-------|---------|------------|-------|
-| **a** | `a` | `aa` | USER, ADMIN |
-| **b** | `b` | `aa` | USER |
+### Rutas GET (lectura / render de vista)
 
-Estos botones aparecen en la esquina superior derecha de la barra de navegación cuando no hay sesión activa.
+| Ruta | Vista | Acceso | Descripción |
+|------|-------|--------|-------------|
+| `GET /` | index.html | Público | Landing page |
+| `GET /login` | login.html | Público | Formulario de login |
+| `GET /autores` | autores.html | Público | Información del autor |
+| `GET /modulos/home` | home.html | Autenticado | Dashboard: eventos, tareas, gastos y alertas del piso |
+| `GET /modulos/gastos` | gastos.html | Autenticado | Listado de gastos y participantes |
+| `GET /modulos/compra` | compra.html | Autenticado | Listas de la compra e ítems |
+| `GET /modulos/tareas` | tareas.html | Autenticado | Tareas y asignaciones del piso |
+| `GET /modulos/calendario` | calendario.html | Autenticado | Eventos y asistencias |
+| `GET /user/{id}` | user.html | ROLE_USER | Perfil de usuario |
+| `GET /admin/` | admin.html | ROLE_ADMIN | Panel de administración |
 
-Tras hacer login, la navbar muestra los enlaces a todos los módulos. El enlace **Administrar** solo es visible para usuarios con rol ADMIN.
+### Rutas POST (escritura / modificación)
 
-## Rutas y vistas
+| Ruta | Acción | Acceso |
+|------|--------|--------|
+| `POST /login` | Autenticación (gestionado por Spring Security) | Público |
+| `POST /logout` | Cierre de sesión | Autenticado |
+| `POST /modulos/gastos` | Crear gasto y repartir entre miembros | Autenticado |
+| `POST /modulos/compra/item` | Añadir ítem a lista de la compra | Autenticado |
+| `POST /modulos/compra/item/{id}/toggle` | Marcar/desmarcar ítem como comprado (AJAX, devuelve JSON) | Autenticado |
+| `POST /modulos/tareas` | Crear tarea con asignación opcional | Autenticado |
+| `POST /modulos/tareas/{id}/completar` | Completar o reabrir asignación de tarea (AJAX, devuelve JSON) | Autenticado |
+| `POST /modulos/calendario` | Crear evento | Autenticado |
+| `POST /modulos/calendario/asistencia/{eventoId}` | Cambiar mi asistencia a un evento (AJAX, devuelve JSON) | Autenticado |
+| `POST /user/{id}` | Editar perfil de usuario | ROLE_USER |
+| `POST /user/{id}/pic` | Subir foto de perfil | ROLE_USER |
+| `POST /user/{id}/msg` | Enviar mensaje a otro usuario (WebSocket) | ROLE_USER |
+| `POST /admin/toggle/{id}` | Habilitar/deshabilitar usuario (AJAX) | ROLE_ADMIN |
 
-| Ruta | Vista | Acceso |
-|------|-------|--------|
-| `GET /` | index.html | Público |
-| `GET /login` | login.html | Público |
-| `GET /modulos/gastos` | gastos.html | Requiere login (USER) |
-| `GET /modulos/compra` | compra.html | Requiere login (USER) |
-| `GET /modulos/home` | home.html | Requiere login (USER) |
-| `GET /modulos/tareas` | tareas.html | Requiere login (USER) |
-| `GET /modulos/calendario` | calendario.html | Requiere login (USER) |
-| `GET /autores` | autores.html | Requiere login (USER) |
-| `GET /admin/` | admin.html | Requiere ADMIN |
-| `GET /user/{id}` | user.html | Requiere login (USER) |
+## Estado de implementación por módulo
 
-## Estructura de la base de datos
+| Módulo | Ruta | Estado | Detalle |
+|--------|------|--------|---------|
+| **Landing** | `GET /` | ✅ Completo | Presentación y enlaces a módulos |
+| **Login** | `GET /login` | ✅ Completo | Formulario con CSRF; botones de login rápido en modo debug |
+| **Home** | `GET /modulos/home` | ✅ Completo | Dashboard con datos reales: próximos 5 eventos, 5 tareas pendientes, 5 gastos recientes y alertas no leídas |
+| **Gastos** | `GET+POST /modulos/gastos` | ✅ Completo | Crear gasto, reparto automático entre miembros, tabla de participantes |
+| **Compra** | `GET+POST /modulos/compra` | ✅ Completo | Añadir ítems, toggle comprado/pendiente vía AJAX |
+| **Tareas** | `GET+POST /modulos/tareas` | ✅ Completo | Crear tarea, asignar a miembro, completar/reabrir vía AJAX |
+| **Calendario** | `GET+POST /modulos/calendario` | ✅ Completo | Crear eventos, confirmar/rechazar asistencia vía AJAX |
+| **Usuario** | `GET+POST /user/{id}` | ✅ Completo | Perfil, foto, mensajería en tiempo real (WebSocket/STOMP) |
+| **Admin** | `GET+POST /admin/` | ✅ Completo | Listar usuarios, habilitar/deshabilitar |
+| **Liquidaciones** | — | ⏳ Pendiente | Entidad y datos en BD; sin vista ni lógica de negocio |
+| **Ausencias** | — | ⏳ Pendiente | Entidad y datos en BD; sin vista |
 
-El modelo relacional consta de **15 entidades JPA** y **5 enumerados**, organizados en torno a la entidad central `Piso`. Las entidades heredadas de la plantilla (`User`, `Message`, `Topic`) usan `GenerationType.SEQUENCE`; las nuevas usan `GenerationType.IDENTITY`.
+## Tests (Karate)
 
-![Diagrama ER de la base de datos](bd.png)
+Los tests están en `src/test/java/es/ucm/fdi/iw/prueba.feature` y se ejecutan con:
 
-Enumerados: `EstadoGasto`, `EstadoAsistencia`, `RolPiso`, `TipoAlerta`, `TipoTarea`.
+```bash
+mvn test
+```
 
-## Estado de implementación por vista
+Los 10 escenarios cubren:
 
-| Vista | Ruta | Estado | Detalle |
-|-------|------|--------|---------|
-| **index** | `GET /` | ✅ Completa | Página principal con descripción del proyecto y enlaces a los módulos |
-| **login** | `GET /login` | ✅ Completa | Formulario de login con CSRF; botones de debug para login rápido |
-| **gastos** | `GET /modulos/gastos` | 📝 Descriptiva | Muestra funcionalidades previstas (registro, reparto, balance, liquidación) |
-| **compra** | `GET /modulos/compra` | 📝 Descriptiva | Describe catálogo compartido, listas, reparto de gasto |
-| **home** | `GET /modulos/home` | 📝 Descriptiva | Panel de control: resumen, eventos, alertas, ausencias |
-| **tareas** | `GET /modulos/tareas` | 🟡 Parcial | Descripción + **demo JavaScript interactiva** que añade tareas dinámicamente |
-| **calendario** | `GET /modulos/calendario` | 📝 Descriptiva | Vistas por horas, por integrante, conflictos y sugerencias |
-| **autores** | `GET /autores` | ✅ Completa | Foto y nombre del autor |
-| **admin** | `GET /admin/` | ✅ Completa | CRUD de usuarios (habilitar/deshabilitar), tabla con DataTables, mensajes vía AJAX |
-| **user** | `GET /user/{id}` | ✅ Completa | Perfil de usuario con AJAX, WebSocket para mensajería en tiempo real |
+| Nº | Escenario | Tipo |
+|----|-----------|------|
+| 1 | Abrir login y capturar token CSRF | Seguridad |
+| 2 | Login correcto y acceso al home | Autenticación |
+| 3 | Ver dashboard con datos del piso | Smoke test |
+| 4 | Ver listado de gastos | Smoke test |
+| 5 | Ver lista de la compra | Smoke test |
+| 6 | Ver tareas del piso | Smoke test |
+| 7 | Admin accede a panel de administración | Control de acceso |
+| 8 | Usuario sin rol ADMIN recibe 403 en `/admin/` | Control de acceso |
+| 9 | Crear gasto y verificar que aparece en el listado | **Negocio + persistencia** |
+| 10 | Crear tarea y verificar que aparece en el listado | **Negocio + persistencia** |
 
-Las vistas de módulos (gastos, compra, home, calendario) son actualmente **descriptivas**: muestran las funcionalidades previstas pero no tienen aún funcionalidad con backend. Las entidades JPA correspondientes ya están definidas y pobladas en `import.sql`, por lo que la conexión entre vista y modelo de datos es directa.
+Los escenarios 9 y 10 verifican el ciclo completo POST → H2 → GET.
 
-## Relación con la prueba externa
+## Configuración
 
-La prueba Karate (`src/test/java/es/ucm/fdi/iw/prueba.feature`) cubre **8 escenarios** que ejercitan las vistas y funcionalidades principales:
+### Desarrollo (`application.properties`)
 
-| Escenario | Vista/funcionalidad probada |
-|-----------|---------------------------|
-| 1 — capturar CSRF | `login` (seguridad) |
-| 2 — login correcto | `login` → `index` |
-| 3 — ver resumen del piso | `home` (contenido descriptivo) |
-| 4 — ver gastos compartidos | `gastos` |
-| 5 — ver lista de la compra | `compra` |
-| 6 — ver tareas | `tareas` |
-| 7 — admin accede a administración | `admin` (control de acceso por rol ADMIN) |
-| 8 — usuario normal no accede | `admin` (denegación por rol USER) |
+- H2 en memoria (`jdbc:h2:mem:iwdb`), se recrea al arrancar
+- `ddl-auto=create-drop` + `import.sql` para datos de prueba
+- Consola H2 en `/h2`, caché desactivada, stacktrace en errores
+- `es.ucm.fdi.debug=true` — activa botones de debug en la navbar
 
-Los escenarios 7 y 8 validan específicamente la **seguridad por roles**: el usuario `a` (ADMIN) puede acceder y el usuario `b` (USER) recibe un 403.
+### Producción (`application-container.properties`, perfil `container`)
 
-## Despliegue
+- H2 persistente en fichero (`jdbc:h2:file:./iwdb`)
+- `ddl-auto=validate`, caché activada, consola H2 desactivada
+- Puerto 80, debug desactivado
 
-El proyecto incluye herramientas de despliegue automatizado:
+### Despliegue
 
-- `deploy.py`: script Python que empaqueta el JAR, sube ficheros de BD/datos y despliega en un contenedor Docker de la FDI vía SSH
-- `application-container.properties`: perfil Spring Boot para producción (puerto 80, H2 a fichero, caché activa, debug desactivado)
-- `credentials.json.template`: plantilla de credenciales (no se sube al repositorio)
-
-Para desplegar:
 ```bash
 python deploy.py
 ```
 
-## Notas sobre carpetas adicionales
-
-Las carpetas `demo/`, `jpademo/`, `qna/` y `plantilla/` provienen del repositorio original de la asignatura y contienen material de referencia del profesorado. No forman parte del proyecto SyncFlat y pueden ignorarse durante la evaluación.
-
-## Notas de escalabilidad
-
-### Arquitectura propuesta para crecer
-
-```
-controller/     → Recibe peticiones HTTP, delega en servicios
-service/        → Lógica de negocio (a crear cuando se implementen funcionalidades reales)
-repository/     → Acceso a datos JPA (Spring Data)
-model/          → Entidades de dominio
-dto/            → Objetos de transferencia (a crear)
-```
-
-### Módulos futuros (roadmap)
-
-1. **Persistencia de gastos**: entidad `Gasto` con JPA, CRUD completo, reparto automático.
-2. **Lista de la compra**: entidad `ItemCompra`, listas compartidas en tiempo real (WebSocket).
-3. **Tareas con rotación**: entidad `Tarea`, asignación automática por turnos, historial.
-4. **Calendario compartido**: entidad `Evento`, vistas por semana/mes, detección de conflictos.
-5. **Notificaciones**: sistema de avisos push vía WebSocket (ya preparado en la plantilla).
-
-### Consideraciones de seguridad
-
-- Validación de entrada en todos los formularios (Bean Validation / `@Valid`).
-- CSRF habilitado (excepto API REST).
-- Autorización por roles (`@Secured`, `@PreAuthorize`).
-- Sanitización de datos para evitar XSS.
-
-### Separación de responsabilidades
-
-- **Templates**: solo presentación, usando fragmentos reutilizables (`head`, `nav`, `footer`).
-- **Controllers**: delegar siempre en servicios, no contener lógica de negocio.
-- **Servicios**: encapsular lógica, transacciones y validaciones.
-- **Repositorios**: solo acceso a datos, sin lógica.
+El script empaqueta el JAR, sube los ficheros vía SSH y reinicia el contenedor Docker en la VM de la FDI. Requiere `credentials.json` (no se sube al repositorio; usar `credentials.json.template` como base).

@@ -42,14 +42,13 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
 
 /**
- * API, intended for logged-in users.
- *
- * Access to this end-point is NOT authenticated
- * - see SecurityConfig and add per-endpoint authentication as needed
+ * API REST de la aplicación.
+ * <p>
+ * Endpoints de uso general: mensajería STOMP, consultas de estado y
+ * ejecución de scripts JS con karate-js. El prefijo {@code /api/**} es
+ * público por configuración, por lo que cada endpoint debe protegerse
+ * individualmente si lo requiere.
  */
-
-// RestController = all methods annotated with @ResponseBody by default, JSON
-// in, JSON out
 @RestController
 @RequestMapping("api")
 public class ApiController {
@@ -59,35 +58,24 @@ public class ApiController {
 
   private static final Logger log = LogManager.getLogger(ApiController.class);
 
-  /**
-   * Simple status test - returns whatever the message is
-   * 
-   * @param message
-   * @return {"code" = "<message>"}
-   */
+  /** Endpoint de diagnóstico: devuelve el mensaje recibido como campo JSON. */
   @GetMapping("/status/{message}")
   public Map<String, String> check(@PathVariable String message) {
     return Map.of("coder", message);
   }
 
-  /**
-   * Counts current users
-   * 
-   * @param message
-   * @return {"code" = "<message>"}
-   */
+  /** Devuelve el número total de usuarios registrados en la base de datos. */
   @GetMapping("/users/count")
   public Map<String, Long> usersCount() {
     return Map.of("count",
         (Long) entityManager.createQuery("SELECT COUNT(u) FROM User u").getSingleResult());
   }
 
-
   /**
-   * Loads a file from the classpath. 
-   * This works even if the file is in a JAR.
-   * @param path - path to the file - **relative to target/classes**
-   * @return the file
+   * Carga un fichero del classpath, incluyendo el caso en que esté dentro de un JAR.
+   *
+   * @param path ruta relativa a {@code target/classes}
+   * @return fichero localizado
    */
   private File loadFromClasspath(String path) {
       try {
@@ -98,10 +86,11 @@ public class ApiController {
   }
 
   /**
-   * Executes JS code using karate-js
-   * @param text
-   * @param vars
-   * @return
+   * Evalúa código JavaScript mediante karate-js, con variables opcionales inyectadas en el contexto.
+   *
+   * @param source código JS a ejecutar
+   * @param vars   variables que se declaran en el contexto antes de la evaluación
+   * @return resultado de la evaluación
    */
   private Object eval(String source, Map<String, Object> vars) {
     Parser parser = new Parser(new Source(source));
@@ -113,8 +102,9 @@ public class ApiController {
     return Interpreter.eval(node, context);
   }
 
-  /** 
-   * Executes JS code loaded from a file in the server
+  /**
+   * Endpoint de prueba que carga {@code static/js/js-eval.js} del classpath
+   * y lo ejecuta con karate-js, devolviendo el resultado.
    */
   @GetMapping(value = "/js", produces = MediaType.APPLICATION_JSON_VALUE)
   public Map<String,String> testJs() throws Exception{
@@ -132,11 +122,12 @@ public class ApiController {
   private SimpMessagingTemplate messagingTemplate;
 
   /**
-   * Posts a message to a topic.
-   * 
-   * @param topic of target user (source user is from ID)
-   * @param o  JSON-ized message, similar to {"message": "text goes here"}
-   * @throws JsonProcessingException
+   * Publica un mensaje en un tópico STOMP y lo persiste en base de datos.
+   * Solo pueden enviar mensajes los miembros del tópico o los administradores.
+   *
+   * @param name clave del tópico destino
+   * @param o    cuerpo JSON con el campo {@code message}
+   * @throws JsonProcessingException si la serialización JSON falla
    */
   @PostMapping("/topic/{name}")
   @ResponseBody
@@ -150,15 +141,13 @@ public class ApiController {
     User sender = entityManager.find(
         User.class, ((User) session.getAttribute("u")).getId());
     Topic target = entityManager.createNamedQuery("Topic.byKey", Topic.class)
-        .setParameter("key", name).getSingleResult();  
+        .setParameter("key", name).getSingleResult();
 
-    // verify permissions
     if (! sender.hasRole(Role.ADMIN) && ! target.getMembers().contains(sender)) {
       response.setStatus(HttpServletResponse.SC_FORBIDDEN);
       return Map.of("error", "user not in group");
     }
 
-    // build message, save to BD
     Message m = new Message();
     m.setRecipient(null);
     m.setSender(sender);
@@ -166,21 +155,20 @@ public class ApiController {
     m.setDateSent(LocalDateTime.now());
     m.setText(text);
     entityManager.persist(m);
-    entityManager.flush(); // to get Id before commit
+    entityManager.flush();
 
-    // send to topic & return
     String json = new ObjectMapper().writeValueAsString(m.toTransfer());
     log.info("Sending a message to  group {} with contents '{}'", target.getName(), json);
     messagingTemplate.convertAndSend("/topic/" + name, json);
     return Map.of("result", "message sent");
   }
 
-    /**
-   * Posts a message to a topic.
-   * 
-   * @param topic of target user (source user is from ID)
-   * @param o  JSON-ized message, similar to {"message": "text goes here"}
-   * @throws JsonProcessingException
+  /**
+   * Devuelve todos los mensajes de un tópico en formato JSON.
+   * Solo accesible para miembros del tópico o administradores.
+   *
+   * @param name clave del tópico
+   * @throws JsonProcessingException si la serialización JSON falla
    */
   @GetMapping("/topic/{name}")
   @ResponseBody
@@ -192,14 +180,12 @@ public class ApiController {
       User requester = entityManager.find(
           User.class, ((User) session.getAttribute("u")).getId());
       Topic target = entityManager.createNamedQuery("Topic.byKey", Topic.class)
-          .setParameter("key", name).getSingleResult();  
-  
-      // verify permissions
+          .setParameter("key", name).getSingleResult();
+
       if (! requester.hasRole(Role.ADMIN) && ! target.getMembers().contains(requester)) {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         return Map.of("error", "user not in group");
-      } 
-      // return result
+      }
       return Map.of("messages", new ObjectMapper().writeValueAsString(
         target.getMessages().stream()
           .map(Message::toTransfer).toArray()

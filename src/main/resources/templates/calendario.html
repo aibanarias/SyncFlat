@@ -78,11 +78,21 @@
                                 <td th:text="${#temporals.format(e.fechaFin, 'dd/MM/yyyy HH:mm')}">fecha</td>
                                 <td th:text="${e.creador.username}">usr</td>
                                 <td>
-                                    <!--/* Mostrar asistencia de cada evento */-->
+                                    <!-- Asistencias de todos los miembros -->
                                     <th:block th:each="ae : ${asistencias}" th:if="${ae.evento.id == e.id}">
                                         <span class="badge"
                                             th:classappend="${ae.estado.name() == 'CONFIRMADO'} ? 'bg-success' : (${ae.estado.name() == 'RECHAZADO'} ? 'bg-danger' : 'bg-secondary')"
                                             th:text="${ae.usuario.username + ': ' + ae.estado}">usr: ESTADO</span>
+                                    </th:block>
+                                    <!-- Botón para que el usuario logueado cambie su propia asistencia -->
+                                    <th:block th:if="${u}"
+                                        th:with="miAsistencia=${asistencias.?[usuario.id == u.id and evento.id == e.id]}">
+                                        <button class="btn btn-sm mt-1 toggle-asistencia"
+                                            th:classappend="${!miAsistencia.isEmpty() and miAsistencia[0].estado.name() == 'CONFIRMADO'} ? ' btn-success' : (${!miAsistencia.isEmpty() and miAsistencia[0].estado.name() == 'RECHAZADO'} ? ' btn-danger' : ' btn-outline-secondary')"
+                                            th:attr="data-evento-id=${e.id}"
+                                            th:text="${miAsistencia.isEmpty()} ? 'Confirmar' : ${miAsistencia[0].estado}">
+                                            Confirmar
+                                        </button>
                                     </th:block>
                                 </td>
                             </tr>
@@ -101,6 +111,31 @@
     </main>
 
     <th:block th:replace="~{fragments/footer.html :: footer}" />
+
+    <!-- AJAX toggle asistencia (usa go() de iw.js, mismo patrón que tareas) -->
+    <script th:if="${piso}">
+        document.querySelectorAll('.toggle-asistencia').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var eventoId = this.getAttribute('data-evento-id');
+                var button = this;
+                go('/modulos/calendario/asistencia/' + eventoId, 'POST')
+                    .then(function (data) {
+                        if (!data.error) {
+                            var estado = data.estado;
+                            button.textContent = estado;
+                            button.className = 'btn btn-sm mt-1 toggle-asistencia';
+                            if (estado === 'CONFIRMADO') {
+                                button.className += ' btn-success';
+                            } else if (estado === 'RECHAZADO') {
+                                button.className += ' btn-danger';
+                            } else {
+                                button.className += ' btn-outline-secondary';
+                            }
+                        }
+                    });
+            });
+        });
+    </script>
 </body>
 
 </html>
