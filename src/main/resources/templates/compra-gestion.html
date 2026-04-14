@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html class="h-100" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <th:block th:replace="~{fragments/head :: header}" />
+    <title>Gestión de listas - SyncFlat</title>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <header th:replace="~{fragments/nav.html :: nav}"></header>
+
+    <main class="flex-shrink-0">
+        <div class="container mt-4">
+
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h1 class="mb-0">Gestión de listas y catálogo</h1>
+                <a th:href="@{/modulos/compra}" class="btn btn-outline-secondary btn-sm">← Volver a la compra</a>
+            </div>
+
+            <div class="row g-4">
+
+                <!-- Columna izquierda: listas de la compra -->
+                <div class="col-md-6">
+
+                    <!-- Crear lista (solo ADMIN) -->
+                    <div class="card mb-4" th:if="${u != null and u.hasRole(T(es.ucm.fdi.iw.model.User.Role).ADMIN)}">
+                        <div class="card-header d-flex align-items-center gap-2">
+                            <span>Nueva lista de la compra</span>
+                            <span class="badge bg-warning text-dark">Admin</span>
+                        </div>
+                        <div class="card-body">
+                            <form th:action="@{/modulos/compra/lista}" method="post" class="row g-2">
+                                <div class="col-8">
+                                    <label for="nombreLista" class="form-label">Nombre</label>
+                                    <input type="text" class="form-control" id="nombreLista" name="nombre"
+                                        placeholder="Ej: Compra semana 20" required>
+                                </div>
+                                <div class="col-4 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary w-100">Crear</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Aviso para no admin -->
+                    <div class="alert alert-light border mb-4"
+                        th:if="${u == null or !u.hasRole(T(es.ucm.fdi.iw.model.User.Role).ADMIN)}">
+                        Solo el administrador puede crear nuevas listas.
+                    </div>
+
+                    <!-- Listas existentes -->
+                    <h5>Listas del piso</h5>
+                    <table class="table table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="l : ${listas}">
+                                <td>
+                                    <a th:href="@{/modulos/compra}" th:text="${l.nombre}">Lista</a>
+                                </td>
+                                <td th:text="${l.fechaCreacion}">fecha</td>
+                                <td>
+                                    <span class="badge bg-success" th:if="${l.completada}">Completada</span>
+                                    <span class="badge bg-secondary" th:unless="${l.completada}">Activa</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(listas)}">
+                                <td colspan="3" class="text-muted text-center">No hay listas creadas.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Columna derecha: catálogo de productos -->
+                <div class="col-md-6">
+
+                    <!-- Crear producto (cualquier usuario) -->
+                    <div class="card mb-4">
+                        <div class="card-header">Añadir producto al catálogo</div>
+                        <div class="card-body">
+                            <form th:action="@{/modulos/compra/producto}" method="post" class="row g-2">
+                                <div class="col-6">
+                                    <label for="nombreProducto" class="form-label">Nombre</label>
+                                    <input type="text" class="form-control" id="nombreProducto" name="nombre"
+                                        placeholder="Ej: Leche entera" required>
+                                </div>
+                                <div class="col-4">
+                                    <label for="categoria" class="form-label">Categoría</label>
+                                    <input type="text" class="form-control" id="categoria" name="categoria"
+                                        placeholder="Ej: Lácteos">
+                                </div>
+                                <div class="col-2 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-success w-100">Añadir</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Catálogo existente -->
+                    <h5>Catálogo del piso</h5>
+                    <table class="table table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th>Categoría</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="p : ${productos}">
+                                <td th:text="${p.nombre}">Producto</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border" th:text="${p.categoria}">Cat</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(productos)}">
+                                <td colspan="2" class="text-muted text-center">El catálogo está vacío.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <th:block th:replace="~{fragments/footer.html :: footer}" />
+</body>
+
+</html>

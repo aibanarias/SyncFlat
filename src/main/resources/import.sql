@@ -116,3 +116,26 @@ VALUES (1, 'Fregar el suelo', 'Fregar cocina y salon', 'RECURRENTE', 'SEMANAL', 
 -- -----------------------------------------------
 INSERT INTO Asignacion_Tarea (id, tarea_id, usuario_id, fecha_asignacion, fecha_completada, validada, validador_id)
 VALUES (1, 1, 2, '2025-10-13', NULL, FALSE, NULL);
+
+-- =============================================================
+-- Reinicio de contadores IDENTITY para evitar colisiones de PK
+-- al persistir nuevas entidades desde JPA.
+-- Las tablas que usan GenerationType.IDENTITY no avanzan su
+-- contador interno cuando import.sql inserta ids explícitos,
+-- de modo que el primer persist() generaría id=1 de nuevo.
+-- =============================================================
+ALTER TABLE Piso              ALTER COLUMN id RESTART WITH 1024;
+ALTER TABLE Miembro_Piso      ALTER COLUMN id RESTART WITH 1024;
+ALTER TABLE Evento            ALTER COLUMN id RESTART WITH 1024;
+ALTER TABLE Asistencia_Evento ALTER COLUMN id RESTART WITH 1024;
+ALTER TABLE Ausencia          ALTER COLUMN id RESTART WITH 1024;
+ALTER TABLE Alerta            ALTER COLUMN id RESTART WITH 1024;
+ALTER TABLE Gasto             ALTER COLUMN id RESTART WITH 1024;
+ALTER TABLE Participante_Gasto ALTER COLUMN id RESTART WITH 1024;
+ALTER TABLE Liquidacion       ALTER COLUMN id RESTART WITH 1024;
+ALTER TABLE Producto          ALTER COLUMN id RESTART WITH 1024;
+ALTER TABLE Lista_Compra      ALTER COLUMN id RESTART WITH 1024;
+ALTER TABLE Item_Lista_Compra ALTER COLUMN id RESTART WITH 1024;
+ALTER TABLE Compra            ALTER COLUMN id RESTART WITH 1024;
+ALTER TABLE Tarea             ALTER COLUMN id RESTART WITH 1024;
+ALTER TABLE Asignacion_Tarea  ALTER COLUMN id RESTART WITH 1024;

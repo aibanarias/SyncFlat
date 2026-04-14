@@ -68,7 +68,8 @@
                                 <td>
                                     <span class="badge"
                                         th:classappend="${g.estado.name() == 'PENDIENTE'} ? 'bg-warning text-dark' : 'bg-success'"
-                                        th:text="${g.estado}">PENDIENTE</span>
+                                        th:text="${g.estado}"
+                                        th:id="'estado-gasto-' + ${g.id}">PENDIENTE</span>
                                 </td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(gastos)}">
@@ -80,24 +81,35 @@
 
                 <!-- Detalle participantes -->
                 <div th:if="${not #lists.isEmpty(participantes)}">
-                    <h3 class="mt-4">Detalle de participantes</h3>
-                    <table class="table table-sm">
-                        <thead>
+                    <h3 class="mt-4">Liquidación por participante</h3>
+                    <table class="table table-sm align-middle">
+                        <thead class="table-light">
                             <tr>
                                 <th>Gasto</th>
                                 <th>Participante</th>
                                 <th>Importe asignado</th>
-                                <th>Pagado</th>
+                                <th>Estado de pago</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:each="pg : ${participantes}">
                                 <td th:text="${pg.gasto.concepto}">gasto</td>
-                                <td th:text="${pg.usuario.username}">usuario</td>
+                                <td th:text="${pg.usuario.firstName + ' ' + pg.usuario.lastName}">usuario</td>
                                 <td th:text="${pg.importeAsignado + ' €'}">0 €</td>
                                 <td>
-                                    <span class="badge" th:classappend="${pg.pagado} ? 'bg-success' : 'bg-secondary'"
-                                        th:text="${pg.pagado} ? 'Sí' : 'No'">No</span>
+                                    <!-- Ya pagado: badge verde (cualquier usuario) -->
+                                    <span th:if="${pg.pagado}" class="badge bg-success">Pagado</span>
+
+                                    <!-- Pendiente, es la fila del usuario logueado: botón de acción -->
+                                    <button th:if="${not pg.pagado and u != null and pg.usuario.id == u.id}"
+                                        class="btn btn-sm btn-outline-success pagar-parte"
+                                        th:attr="data-pg-id=${pg.id},data-gasto-id=${pg.gasto.id}">
+                                        Pagar mi parte
+                                    </button>
+
+                                    <!-- Pendiente, fila de otro usuario: solo lectura -->
+                                    <span th:if="${not pg.pagado and (u == null or pg.usuario.id != u.id)}"
+                                        class="badge bg-warning text-dark">Pendiente</span>
                                 </td>
                             </tr>
                         </tbody>
@@ -112,6 +124,35 @@
     </main>
 
     <th:block th:replace="~{fragments/footer.html :: footer}" />
+
+    <!-- AJAX pagar participación (usa go() de iw.js) -->
+    <script th:if="${piso}">
+        document.querySelectorAll('.pagar-parte').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var pgId = this.getAttribute('data-pg-id');
+                var gastoId = this.getAttribute('data-gasto-id');
+                var button = this;
+
+                go('/modulos/gastos/participante/' + pgId + '/pagar', 'POST')
+                    .then(function (data) {
+                        if (data.error) return;
+
+                        var badge = document.createElement('span');
+                        badge.className = 'badge bg-success';
+                        badge.textContent = 'Pagado';
+                        button.parentNode.replaceChild(badge, button);
+
+                        if (data.liquidado) {
+                            var estadoBadge = document.getElementById('estado-gasto-' + gastoId);
+                            if (estadoBadge) {
+                                estadoBadge.className = 'badge bg-success';
+                                estadoBadge.textContent = 'LIQUIDADO';
+                            }
+                        }
+                    });
+            });
+        });
+    </script>
 </body>
 
 </html>

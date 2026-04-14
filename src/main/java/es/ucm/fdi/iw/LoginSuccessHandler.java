@@ -62,32 +62,32 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
     String username = ((org.springframework.security.core.userdetails.User) authentication.getPrincipal())
         .getUsername();
 
-    log.info(“Storing user info for {} in session {}”, username, session.getId());
-    User u = entityManager.createNamedQuery(“User.byUsername”, User.class)
-        .setParameter(“username”, username)
+    log.info("Storing user info for {} in session {}", username, session.getId());
+    User u = entityManager.createNamedQuery("User.byUsername", User.class)
+        .setParameter("username", username)
         .getSingleResult();
-    session.setAttribute(“u”, u);
+    session.setAttribute("u", u);
 
     // Calcula URL base y WebSocket eliminando el protocolo (ej. //host:puerto/ctx/)
     // En el entorno UCM se usa wss:// en lugar de ws://
     String url = request.getRequestURL().toString()
-        .replaceFirst(“/[^/]*$”, “”)
-        .replaceFirst(“[^/]*”, “”);
-    String ws = “ws:” + url + “/ws”;
-    if (url.contains(“ucm.es”)) {
-      ws = ws.replace(“ws:”, “wss:”);
+        .replaceFirst("/[^/]*$", "")
+        .replaceFirst("[^/]*", "");
+    String ws = "ws:" + url + "/ws";
+    if (url.contains("ucm.es")) {
+      ws = ws.replace("ws:", "wss:");
     }
-    session.setAttribute(“url”, url);
-    session.setAttribute(“ws”, ws);
+    session.setAttribute("url", url);
+    session.setAttribute("ws", ws);
 
-    List<String> topics = entityManager.createNamedQuery(“User.topics”, String.class)
-        .setParameter(“id”, u.getId())
+    List<String> topics = entityManager.createNamedQuery("User.topics", String.class)
+        .setParameter("id", u.getId())
         .getResultList();
-    session.setAttribute(“topics”, String.join(“,”, topics));
+    session.setAttribute("topics", String.join(",", topics));
 
-    String nextUrl = u.hasRole(User.Role.ADMIN) ? “admin/” : “user/” + u.getId();
+    String nextUrl = u.hasRole(User.Role.ADMIN) ? "admin/" : "modulos/home";
 
-    log.info(“LOG IN: {} (id {}) -- session is {}, websocket is {} -- redirected to {}”,
+    log.info("LOG IN: {} (id {}) -- session is {}, websocket is {} -- redirected to {}",
         u.getUsername(), u.getId(), session.getId(), ws, nextUrl);
 
     response.sendRedirect(nextUrl);

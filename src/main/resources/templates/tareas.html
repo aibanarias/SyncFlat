@@ -70,91 +70,119 @@
                     </div>
                 </div>
 
-                <!-- Tabla de tareas -->
-                <h3>Tareas del piso</h3>
+                <!-- Tareas por realizar -->
+                <h3 class="mt-4">Tareas por realizar</h3>
+
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-hover align-middle">
                         <thead class="table-dark">
                             <tr>
                                 <th>Tarea</th>
                                 <th>Tipo</th>
-                                <th>Frecuencia</th>
-                                <th>Fecha límite</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="t : ${tareas}">
-                                <td>
-                                    <strong th:text="${t.nombre}">Tarea</strong>
-                                    <br><small class="text-muted" th:text="${t.descripcion}">desc</small>
-                                </td>
-                                <td>
-                                    <span class="badge"
-                                        th:classappend="${t.tipo.name() == 'RECURRENTE'} ? 'bg-info' : 'bg-secondary'"
-                                        th:text="${t.tipo}">Tipo</span>
-                                </td>
-                                <td th:text="${t.frecuencia ?: '—'}">—</td>
-                                <td th:text="${t.fechaLimite}">fecha</td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(tareas)}">
-                                <td colspan="4" class="text-muted text-center">No hay tareas creadas.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Asignaciones -->
-                <div th:if="${not #lists.isEmpty(asignaciones)}">
-                    <h3 class="mt-4">Asignaciones</h3>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Tarea</th>
                                 <th>Asignada a</th>
-                                <th>Fecha asignación</th>
-                                <th>Estado</th>
+                                <th>Asignada el</th>
+                                <th>Fecha límite</th>
                                 <th>Acción</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr th:each="at : ${asignaciones}">
-                                <td th:text="${at.tarea.nombre}">Tarea</td>
-                                <td th:text="${at.usuario.username}">usr</td>
+                            <tr th:each="at : ${pendientes}">
+                                <td>
+                                    <strong th:text="${at.tarea.nombre}">Tarea</strong>
+                                    <div class="text-muted small" th:text="${at.tarea.descripcion}">desc</div>
+                                </td>
+                                <td>
+                                    <span class="badge"
+                                        th:classappend="${at.tarea.tipo.name() == 'RECURRENTE'} ? 'bg-info text-dark' : 'bg-secondary'"
+                                        th:text="${at.tarea.tipo}">Tipo</span>
+                                </td>
+                                <td th:text="${at.usuario.firstName + ' ' + at.usuario.lastName}">Miembro</td>
                                 <td th:text="${at.fechaAsignacion}">fecha</td>
                                 <td>
-                                    <span class="badge" th:if="${at.fechaCompletada != null}" class="bg-success">
-                                        Completada <span th:text="${at.fechaCompletada}">fecha</span>
+                                    <span th:text="${at.tarea.fechaLimite}"
+                                        th:classappend="${at.tarea.fechaLimite != null and at.tarea.fechaLimite.isBefore(#temporals.createToday())} ? 'text-danger fw-semibold' : ''">
+                                        fecha
                                     </span>
-                                    <span class="badge bg-warning text-dark"
-                                        th:if="${at.fechaCompletada == null}">Pendiente</span>
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm completar-tarea"
-                                        th:classappend="${at.fechaCompletada != null} ? 'btn-outline-secondary' : 'btn-success'"
-                                        th:data-id="${at.id}"
-                                        th:text="${at.fechaCompletada != null} ? 'Reabrir' : 'Completar'">Completar</button>
+                                    <button class="btn btn-sm btn-outline-success completar-tarea"
+                                        th:data-id="${at.id}">
+                                        Marcar como hecha
+                                    </button>
                                 </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(pendientes) and #lists.isEmpty(sinAsignar)}">
+                                <td colspan="6" class="text-muted text-center">No hay tareas pendientes.</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <hr class="my-4">
-                <h2>Demo JavaScript</h2>
-                <p>Ejemplo interactivo: pulsa el botón para añadir tareas a la lista (sin backend).</p>
-                <button id="btn-add-task" class="btn btn-primary mb-3" type="button">Añadir tarea (demo)</button>
-                <ul id="demo-list" class="list-group mb-4"></ul>
+                <!-- Tareas sin asignar (creadas pero sin responsable) -->
+                <div th:if="${not #lists.isEmpty(sinAsignar)}" class="mb-4">
+                    <h6 class="text-muted">Sin responsable asignado</h6>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center"
+                            th:each="t : ${sinAsignar}">
+                            <div>
+                                <strong th:text="${t.nombre}">Tarea</strong>
+                                <span class="text-muted ms-2 small" th:text="${t.descripcion}">desc</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge"
+                                    th:classappend="${t.tipo.name() == 'RECURRENTE'} ? 'bg-info text-dark' : 'bg-secondary'"
+                                    th:text="${t.tipo}">Tipo</span>
+                                <span class="ms-2 small text-muted">Límite: <span th:text="${t.fechaLimite}">fecha</span></span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
 
-                <script>
-                    document.getElementById('btn-add-task').addEventListener('click', function () {
-                        const list = document.getElementById('demo-list');
-                        const li = document.createElement('li');
-                        li.className = 'list-group-item';
-                        const now = new Date();
-                        li.textContent = 'Tarea #' + (list.children.length + 1) + ' — añadida a las ' + now.toLocaleTimeString();
-                        list.appendChild(li);
-                    });
-                </script>
+                <!-- Tareas realizadas -->
+                <h3 class="mt-5">Tareas realizadas</h3>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-success">
+                            <tr>
+                                <th>Tarea</th>
+                                <th>Tipo</th>
+                                <th>Asignada a</th>
+                                <th>Completada el</th>
+                                <th>Fecha límite</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="at : ${realizadas}" class="text-muted">
+                                <td>
+                                    <span th:text="${at.tarea.nombre}">Tarea</span>
+                                    <div class="small" th:text="${at.tarea.descripcion}">desc</div>
+                                </td>
+                                <td>
+                                    <span class="badge"
+                                        th:classappend="${at.tarea.tipo.name() == 'RECURRENTE'} ? 'bg-info text-dark' : 'bg-secondary'"
+                                        th:text="${at.tarea.tipo}">Tipo</span>
+                                </td>
+                                <td th:text="${at.usuario.firstName + ' ' + at.usuario.lastName}">Miembro</td>
+                                <td>
+                                    <span class="badge bg-success" th:text="${at.fechaCompletada}">fecha</span>
+                                </td>
+                                <td th:text="${at.tarea.fechaLimite}">fecha</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary completar-tarea"
+                                        th:data-id="${at.id}">
+                                        Reabrir
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(realizadas)}">
+                                <td colspan="6" class="text-muted text-center">Todavía no hay tareas completadas.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
             </th:block>
 
             <p class="mt-4">
@@ -165,7 +193,7 @@
 
     <th:block th:replace="~{fragments/footer.html :: footer}" />
 
-    <!-- AJAX completar tarea (usa go() de iw.js) -->
+    <!-- AJAX completar / reabrir tarea (usa go() de iw.js) -->
     <script th:if="${piso}">
         document.querySelectorAll('.completar-tarea').forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -176,14 +204,12 @@
                     .then(function (data) {
                         if (data.completada) {
                             button.textContent = 'Reabrir';
-                            button.className = 'btn btn-sm completar-tarea btn-outline-secondary';
-                            button.closest('tr').querySelector('.badge').className = 'badge bg-success';
-                            button.closest('tr').querySelector('.badge').textContent = 'Completada';
+                            button.className = 'btn btn-sm btn-outline-secondary completar-tarea';
+                            button.closest('tr').classList.add('text-muted');
                         } else {
-                            button.textContent = 'Completar';
-                            button.className = 'btn btn-sm completar-tarea btn-success';
-                            button.closest('tr').querySelector('.badge').className = 'badge bg-warning text-dark';
-                            button.closest('tr').querySelector('.badge').textContent = 'Pendiente';
+                            button.textContent = 'Marcar como hecha';
+                            button.className = 'btn btn-sm btn-outline-success completar-tarea';
+                            button.closest('tr').classList.remove('text-muted');
                         }
                     });
             });

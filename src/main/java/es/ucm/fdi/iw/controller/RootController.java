@@ -218,6 +218,49 @@ public class RootController {
         return "redirect:/modulos/gastos";
     }
 
+    /**
+     * Marca la participación del usuario en un gasto como pagada.
+     * Solo el propio usuario puede marcar su parte. Si tras el pago
+     * todos los participantes del gasto están al corriente, el gasto
+     * pasa a estado LIQUIDADO.
+     */
+    @PostMapping("/modulos/gastos/participante/{id}/pagar")
+    @Transactional
+    @ResponseBody
+    public Map<String, Object> pagarParticipacion(@PathVariable long id, HttpSession session) {
+        User u = (User) session.getAttribute("u");
+        if (u == null)
+            return Map.of("error", "no autorizado");
+
+        ParticipanteGasto pg = entityManager.find(ParticipanteGasto.class, id);
+        if (pg == null)
+            return Map.of("error", "participación no encontrada");
+
+        if (pg.getUsuario().getId() != u.getId())
+            return Map.of("error", "no autorizado");
+
+        if (pg.isPagado())
+            return Map.of("error", "ya estaba pagado");
+
+        pg.setPagado(true);
+
+        long pendientes = entityManager
+                .createQuery(
+                        "SELECT COUNT(p) FROM ParticipanteGasto p WHERE p.gasto.id = :gid AND p.pagado = false",
+                        Long.class)
+                .setParameter("gid", pg.getGasto().getId())
+                .getSingleResult();
+
+        boolean liquidado = pendientes == 0;
+        if (liquidado)
+            pg.getGasto().setEstado(EstadoGasto.LIQUIDADO);
+
+        log.info("Participante {} marcó su parte del gasto '{}' como pagada{}",
+                u.getUsername(), pg.getGasto().getConcepto(), liquidado ? " — gasto liquidado" : "");
+
+        return Map.of("pagado", true, "liquidado", liquidado);
+    }
+
     // --- MÓDULO COMPRA ---
 
     @GetMapping("/modulos/compra")
@@ -279,6 +322,77 @@ public class RootController {
         return "redirect:/modulos/compra";
     }
 
+    @GetMapping("/modulos/compra/gestion")
+    public String gestionCompra(Model model, HttpSession session) {
+        Piso piso = resolverPiso(session);
+        if (piso == null)
+            return "redirect:/login";
+
+        model.addAttribute("piso", piso);
+
+        List<ListaCompra> listas = entityManager
+                .createQuery("SELECT lc FROM ListaCompra lc WHERE lc.piso.id = :pid ORDER BY lc.fechaCreacion DESC",
+                        ListaCompra.class)
+                .setParameter("pid", piso.getId())
+                .getResultList();
+        model.addAttribute("listas", listas);
+
+        List<Producto> productos = entityManager
+                .createQuery("SELECT p FROM Producto p WHERE p.piso.id = :pid ORDER BY p.categoria, p.nombre",
+                        Producto.class)
+                .setParameter("pid", piso.getId())
+                .getResultList();
+        model.addAttribute("productos", productos);
+
+        return "compra-gestion";
+    }
+
+    /** Solo el administrador del piso puede crear nuevas listas de la compra. */
+    @PostMapping("/modulos/compra/lista")
+    @Transactional
+    public String crearLista(@RequestParam String nombre, HttpSession session) {
+        User u = (User) session.getAttribute("u");
+        Piso piso = resolverPiso(session);
+        if (u == null || piso == null)
+            return "redirect:/login";
+        if (!u.hasRole(User.Role.ADMIN))
+            return "redirect:/modulos/compra/gestion";
+        if (nombre == null || nombre.isBlank())
+            return "redirect:/modulos/compra/gestion";
+
+        ListaCompra lista = new ListaCompra();
+        lista.setNombre(nombre.trim());
+        lista.setFechaCreacion(LocalDate.now());
+        lista.setCompletada(false);
+        lista.setPiso(piso);
+        entityManager.persist(lista);
+
+        log.info("Lista '{}' creada por {}", nombre.trim(), u.getUsername());
+        return "redirect:/modulos/compra/gestion";
+    }
+
+    @PostMapping("/modulos/compra/producto")
+    @Transactional
+    public String crearProducto(@RequestParam String nombre,
+            @RequestParam(required = false) String categoria,
+            HttpSession session) {
+        User u = (User) session.getAttribute("u");
+        Piso piso = resolverPiso(session);
+        if (u == null || piso == null)
+            return "redirect:/login";
+        if (nombre == null || nombre.isBlank())
+            return "redirect:/modulos/compra/gestion";
+
+        Producto p = new Producto();
+        p.setNombre(nombre.trim());
+        p.setCategoria(categoria != null && !categoria.isBlank() ? categoria.trim() : "General");
+        p.setPiso(piso);
+        entityManager.persist(p);
+
+        log.info("Producto '{}' añadido al catálogo por {}", nombre.trim(), u.getUsername());
+        return "redirect:/modulos/compra/gestion";
+    }
+
     @PostMapping("/modulos/compra/item/{id}/toggle")
     @Transactional
     @ResponseBody
@@ -304,19 +418,34 @@ public class RootController {
         if (piso != null) {
             model.addAttribute("piso", piso);
 
-            List<Tarea> tareas = entityManager
-                    .createQuery("SELECT t FROM Tarea t WHERE t.piso.id = :pid ORDER BY t.fechaLimite", Tarea.class)
-                    .setParameter("pid", piso.getId())
-                    .getResultList();
-            model.addAttribute("tareas", tareas);
-
-            List<AsignacionTarea> asignaciones = entityManager
+            List<AsignacionTarea> pendientes = entityManager
                     .createQuery(
-                            "SELECT at FROM AsignacionTarea at WHERE at.tarea.piso.id = :pid ORDER BY at.fechaAsignacion DESC",
+                            "SELECT at FROM AsignacionTarea at WHERE at.tarea.piso.id = :pid"
+                            + " AND at.fechaCompletada IS NULL ORDER BY at.tarea.fechaLimite ASC",
                             AsignacionTarea.class)
                     .setParameter("pid", piso.getId())
                     .getResultList();
-            model.addAttribute("asignaciones", asignaciones);
+            model.addAttribute("pendientes", pendientes);
+
+            List<AsignacionTarea> realizadas = entityManager
+                    .createQuery(
+                            "SELECT at FROM AsignacionTarea at WHERE at.tarea.piso.id = :pid"
+                            + " AND at.fechaCompletada IS NOT NULL ORDER BY at.fechaCompletada DESC",
+                            AsignacionTarea.class)
+                    .setParameter("pid", piso.getId())
+                    .getResultList();
+            model.addAttribute("realizadas", realizadas);
+
+            // Tareas creadas pero sin asignar a ningún miembro todavía
+            List<Tarea> sinAsignar = entityManager
+                    .createQuery(
+                            "SELECT t FROM Tarea t WHERE t.piso.id = :pid"
+                            + " AND NOT EXISTS (SELECT at FROM AsignacionTarea at WHERE at.tarea.id = t.id)"
+                            + " ORDER BY t.fechaLimite ASC",
+                            Tarea.class)
+                    .setParameter("pid", piso.getId())
+                    .getResultList();
+            model.addAttribute("sinAsignar", sinAsignar);
 
             List<MiembroPiso> miembros = entityManager
                     .createQuery("SELECT mp FROM MiembroPiso mp WHERE mp.piso.id = :pid", MiembroPiso.class)

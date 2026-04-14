@@ -67,7 +67,7 @@ El esquema se genera automáticamente por Hibernate a partir de las entidades (`
 | `Message` | Mensaje entre usuarios (plantilla) |
 | `Topic` | Canal de mensajería (plantilla) |
 
-El diagrama ER de referencia está en `bd.png`.
+El diagrama ER de referencia está en `bd.png`. La descripción detallada del modelo, decisiones de diseño y generación de IDs está en [`datadoc.md`](datadoc.md).
 
 ## Estructura del proyecto
 

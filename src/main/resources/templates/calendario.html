@@ -65,7 +65,8 @@
                                 <th>Inicio</th>
                                 <th>Fin</th>
                                 <th>Creador</th>
-                                <th>Asistencia</th>
+                                <th>Estado asistentes</th>
+                                <th>Mi asistencia</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -77,27 +78,32 @@
                                 <td th:text="${#temporals.format(e.fechaInicio, 'dd/MM/yyyy HH:mm')}">fecha</td>
                                 <td th:text="${#temporals.format(e.fechaFin, 'dd/MM/yyyy HH:mm')}">fecha</td>
                                 <td th:text="${e.creador.username}">usr</td>
+
+                                <!-- Columna de solo lectura: estado de todos los miembros -->
                                 <td>
-                                    <!-- Asistencias de todos los miembros -->
                                     <th:block th:each="ae : ${asistencias}" th:if="${ae.evento.id == e.id}">
-                                        <span class="badge"
+                                        <span class="badge mb-1"
                                             th:classappend="${ae.estado.name() == 'CONFIRMADO'} ? 'bg-success' : (${ae.estado.name() == 'RECHAZADO'} ? 'bg-danger' : 'bg-secondary')"
                                             th:text="${ae.usuario.username + ': ' + ae.estado}">usr: ESTADO</span>
                                     </th:block>
-                                    <!-- Botón para que el usuario logueado cambie su propia asistencia -->
+                                </td>
+
+                                <!-- Columna de acción: el usuario logueado cambia su propio estado -->
+                                <td>
                                     <th:block th:if="${u}"
-                                        th:with="miAsistencia=${asistencias.?[usuario.id == u.id and evento.id == e.id]}">
-                                        <button class="btn btn-sm mt-1 toggle-asistencia"
-                                            th:classappend="${!miAsistencia.isEmpty() and miAsistencia[0].estado.name() == 'CONFIRMADO'} ? ' btn-success' : (${!miAsistencia.isEmpty() and miAsistencia[0].estado.name() == 'RECHAZADO'} ? ' btn-danger' : ' btn-outline-secondary')"
+                                        th:with="miAsistencia=${asistencias.?[usuario.id == __${u.id}__ and evento.id == __${e.id}__]}">
+                                        <button class="btn btn-sm toggle-asistencia"
+                                            th:classappend="${!miAsistencia.isEmpty() and miAsistencia[0].estado.name() == 'CONFIRMADO'} ? 'btn-success' : (${!miAsistencia.isEmpty() and miAsistencia[0].estado.name() == 'RECHAZADO'} ? 'btn-outline-danger' : 'btn-outline-secondary')"
                                             th:attr="data-evento-id=${e.id}"
-                                            th:text="${miAsistencia.isEmpty()} ? 'Confirmar' : ${miAsistencia[0].estado}">
-                                            Confirmar
+                                            th:text="${miAsistencia.isEmpty()} ? 'Sin confirmar' : (${miAsistencia[0].estado.name() == 'CONFIRMADO'} ? 'Confirmo asistencia' : (${miAsistencia[0].estado.name() == 'RECHAZADO'} ? 'No asistiré' : 'Pendiente'))">
+                                            Sin confirmar
                                         </button>
                                     </th:block>
+                                    <span class="text-muted small" th:unless="${u}">—</span>
                                 </td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(eventos)}">
-                                <td colspan="5" class="text-muted text-center">No hay eventos registrados.</td>
+                                <td colspan="6" class="text-muted text-center">No hay eventos registrados.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -114,6 +120,17 @@
 
     <!-- AJAX toggle asistencia (usa go() de iw.js, mismo patrón que tareas) -->
     <script th:if="${piso}">
+        var estadoTexto = {
+            'CONFIRMADO': 'Confirmo asistencia',
+            'RECHAZADO':  'No asistiré',
+            'PENDIENTE':  'Pendiente'
+        };
+        var estadoClase = {
+            'CONFIRMADO': 'btn-success',
+            'RECHAZADO':  'btn-outline-danger',
+            'PENDIENTE':  'btn-outline-secondary'
+        };
+
         document.querySelectorAll('.toggle-asistencia').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var eventoId = this.getAttribute('data-evento-id');
@@ -122,15 +139,8 @@
                     .then(function (data) {
                         if (!data.error) {
                             var estado = data.estado;
-                            button.textContent = estado;
-                            button.className = 'btn btn-sm mt-1 toggle-asistencia';
-                            if (estado === 'CONFIRMADO') {
-                                button.className += ' btn-success';
-                            } else if (estado === 'RECHAZADO') {
-                                button.className += ' btn-danger';
-                            } else {
-                                button.className += ' btn-outline-secondary';
-                            }
+                            button.textContent = estadoTexto[estado] || estado;
+                            button.className = 'btn btn-sm toggle-asistencia ' + (estadoClase[estado] || 'btn-outline-secondary');
                         }
                     });
             });

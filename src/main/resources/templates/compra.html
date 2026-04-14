@@ -11,7 +11,11 @@
 
     <main class="flex-shrink-0">
         <div class="container mt-4">
-            <h1 class="mb-4">Lista de la compra</h1>
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h1 class="mb-0">Lista de la compra</h1>
+                <a th:if="${piso}" th:href="@{/modulos/compra/gestion}"
+                    class="btn btn-outline-secondary btn-sm">Gestionar listas y catálogo →</a>
+            </div>
 
             <!-- Sin piso -->
             <th:block th:unless="${piso}">
@@ -23,6 +27,15 @@
 
             <!-- Con piso -->
             <th:block th:if="${piso}">
+
+                <!-- Aviso si no hay listas o productos -->
+                <div class="alert alert-info"
+                    th:if="${#lists.isEmpty(listas) or #lists.isEmpty(productos)}">
+                    Antes de añadir ítems necesitas
+                    <th:block th:if="${#lists.isEmpty(listas)}">al menos una lista</th:block>
+                    <th:block th:if="${not #lists.isEmpty(listas) and #lists.isEmpty(productos)}">al menos un producto en el catálogo</th:block>.
+                    <a th:href="@{/modulos/compra/gestion}" class="alert-link">Ir a gestión →</a>
+                </div>
 
                 <!-- Formulario añadir item (solo si hay listas y productos) -->
                 <div class="card mb-4" th:if="${not #lists.isEmpty(listas) and not #lists.isEmpty(productos)}">
