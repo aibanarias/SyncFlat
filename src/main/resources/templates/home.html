@@ -18,12 +18,28 @@
             <!-- Con piso asignado -->
             <th:block th:if="${piso}">
                 <div class="d-flex align-items-center justify-content-between mb-3 p-3 border rounded bg-light">
-                    <div>
+                    <div class="d-flex align-items-center flex-wrap gap-2">
                         <strong th:text="${piso.nombre}">Piso</strong>
-                        <span class="text-muted ms-2" th:text="${piso.direccion}">Dirección</span>
-                        <span class="ms-3 text-muted small">Código:
+                        <span class="text-muted" th:text="${piso.direccion}">Dirección</span>
+                        <span class="d-flex align-items-center gap-1 ms-2">
+                            <span class="text-muted small">Código:</span>
                             <span class="badge bg-secondary font-monospace"
                                   th:text="${piso.codigoInvitacion}">XXXXXX</span>
+                            <button type="button"
+                                    id="btn-copiar-codigo"
+                                    th:data-codigo="${piso.codigoInvitacion}"
+                                    class="btn btn-outline-secondary btn-sm py-0 px-2"
+                                    title="Copiar código de invitación">
+                                Copiar
+                            </button>
+                            <button type="button"
+                                    id="btn-compartir-invitacion"
+                                    th:data-nombre="${piso.nombre}"
+                                    th:data-codigo="${piso.codigoInvitacion}"
+                                    class="btn btn-outline-success btn-sm py-0 px-2"
+                                    title="Compartir invitación">
+                                Compartir
+                            </button>
                         </span>
                     </div>
                     <form th:action="@{/modulos/piso/abandonar}" method="post" class="mb-0"
@@ -365,6 +381,65 @@
                     badge.textContent = +badge.textContent + 1;
                 }
             };
+        })();
+
+        // ── Copiar código / Compartir invitación (Web Share API + fallback WhatsApp) ──────────
+        (function () {
+            function copiarTexto(texto, btn) {
+                var etiquetaOrig = btn.textContent;
+                function marcarCopiado() {
+                    btn.textContent = '¡Copiado!';
+                    setTimeout(function () { btn.textContent = etiquetaOrig; }, 1800);
+                }
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(texto).then(marcarCopiado).catch(fallback);
+                } else {
+                    fallback();
+                }
+                function fallback() {
+                    var ta = document.createElement('textarea');
+                    ta.value = texto;
+                    ta.style.cssText = 'position:fixed;opacity:0';
+                    document.body.appendChild(ta);
+                    ta.focus();
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    marcarCopiado();
+                }
+            }
+
+            var btnCopiar     = document.getElementById('btn-copiar-codigo');
+            var btnCompartir  = document.getElementById('btn-compartir-invitacion');
+
+            if (btnCopiar) {
+                btnCopiar.addEventListener('click', function () {
+                    copiarTexto(btnCopiar.dataset.codigo, btnCopiar);
+                });
+            }
+
+            if (btnCompartir) {
+                var nombre  = btnCompartir.dataset.nombre;
+                var codigo  = btnCompartir.dataset.codigo;
+                var enlace  = window.location.origin + '/modulos/piso';
+                var mensaje = 'Únete a SyncFlat. El código de acceso a «' + nombre + '» es: ' + codigo + '. Accede en: ' + enlace;
+                var titulo  = 'Invitación a ' + nombre + ' en SyncFlat';
+
+                btnCompartir.addEventListener('click', function () {
+                    if (navigator.share) {
+                        navigator.share({ title: titulo, text: mensaje, url: enlace })
+                            .catch(function (err) {
+                                if (err.name !== 'AbortError') abrirWhatsApp(mensaje);
+                            });
+                    } else {
+                        abrirWhatsApp(mensaje);
+                    }
+                });
+            }
+
+            function abrirWhatsApp(msg) {
+                window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener,noreferrer');
+            }
         })();
     </script>
 </body>
