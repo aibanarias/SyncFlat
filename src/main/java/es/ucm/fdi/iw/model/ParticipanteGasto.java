@@ -8,6 +8,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Participación de un usuario en un gasto compartido.
@@ -17,6 +20,9 @@ import jakarta.persistence.ManyToOne;
  * el momento de crear los participantes.
  */
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 public class ParticipanteGasto {
 
     @Id
@@ -33,47 +39,4 @@ public class ParticipanteGasto {
 
     private BigDecimal importeAsignado;
     private boolean pagado;
-
-    public ParticipanteGasto() {
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public Gasto getGasto() {
-        return gasto;
-    }
-
-    public void setGasto(Gasto gasto) {
-        this.gasto = gasto;
-    }
-
-    public User getUsuario() {
-        return usuario;
-    }
-
-    public void setUsuario(User usuario) {
-        this.usuario = usuario;
-    }
-
-    public BigDecimal getImporteAsignado() {
-        return importeAsignado;
-    }
-
-    public void setImporteAsignado(BigDecimal importeAsignado) {
-        this.importeAsignado = importeAsignado;
-    }
-
-    public boolean isPagado() {
-        return pagado;
-    }
-
-    public void setPagado(boolean pagado) {
-        this.pagado = pagado;
-    }
 }

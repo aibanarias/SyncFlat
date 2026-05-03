@@ -11,6 +11,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Gasto compartido registrado en el piso.
@@ -21,6 +24,9 @@ import jakarta.persistence.ManyToOne;
  * liquidación o ya ha sido saldado.
  */
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 public class Gasto {
 
     @Id
@@ -41,63 +47,4 @@ public class Gasto {
 
     @Enumerated(EnumType.STRING)
     private EstadoGasto estado;
-
-    public Gasto() {
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getConcepto() {
-        return concepto;
-    }
-
-    public void setConcepto(String concepto) {
-        this.concepto = concepto;
-    }
-
-    public BigDecimal getImporte() {
-        return importe;
-    }
-
-    public void setImporte(BigDecimal importe) {
-        this.importe = importe;
-    }
-
-    public LocalDate getFecha() {
-        return fecha;
-    }
-
-    public void setFecha(LocalDate fecha) {
-        this.fecha = fecha;
-    }
-
-    public User getPagador() {
-        return pagador;
-    }
-
-    public void setPagador(User pagador) {
-        this.pagador = pagador;
-    }
-
-    public Piso getPiso() {
-        return piso;
-    }
-
-    public void setPiso(Piso piso) {
-        this.piso = piso;
-    }
-
-    public EstadoGasto getEstado() {
-        return estado;
-    }
-
-    public void setEstado(EstadoGasto estado) {
-        this.estado = estado;
-    }
 }

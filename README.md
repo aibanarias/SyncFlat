@@ -11,7 +11,7 @@ Aplicación web para coordinar la convivencia en un piso compartido: gastos, tar
 | Seguridad | Spring Security 6 (roles, CSRF, sesiones) |
 | Tiempo real | WebSocket + STOMP |
 | Vistas | Thymeleaf 3 + Bootstrap 5.3.3 |
-| Tests | Karate 1.4.1 (JUnit 5) |
+| Tests | Karate 1.5.2 (JUnit 5) |
 | Build | Maven + Java 21 |
 
 ## Cómo ejecutar
@@ -44,7 +44,7 @@ En modo debug, la barra de navegación muestra botones de login rápido para `a`
 
 El esquema se genera automáticamente por Hibernate a partir de las entidades (`ddl-auto=create-drop`). Los datos iniciales se cargan desde `import.sql`.
 
-### Entidades (15) y enumerados (5)
+### Entidades (16) y enumerados (6)
 
 | Entidad | Descripción |
 |---------|------------|
@@ -62,6 +62,7 @@ El esquema se genera automáticamente por Hibernate a partir de las entidades (`
 | `Compra` | Compra realizada sobre una lista |
 | `Evento` | Evento del calendario del piso |
 | `AsistenciaEvento` | Respuesta de un usuario a un evento (`PENDIENTE`, `CONFIRMADO`, `RECHAZADO`) |
+| `BloqueHorario` | Franja horaria personal de un usuario. Tipo: `TRABAJO`, `CLASES`, `ENTRENAMIENTO`, `OTRO` |
 | `Ausencia` | Período de ausencia de un miembro |
 | `Alerta` | Aviso del piso. Tipo: `INFO`, `URGENTE`, `RECORDATORIO` |
 | `Message` | Mensaje entre usuarios (plantilla) |
@@ -83,11 +84,18 @@ src/
 │   │   ├── AppConfig.java               # Beans auxiliares
 │   │   ├── StartupConfig.java           # Lee es.ucm.fdi.debug
 │   │   ├── controller/
-│   │   │   ├── RootController.java      # Módulos principales (gastos, tareas, compra, calendario, home)
+│   │   │   ├── BaseController.java      # Utilidades comunes (resolverPiso, usuario en sesión)
+│   │   │   ├── HomeController.java      # Dashboard del piso
+│   │   │   ├── GastoController.java     # Módulo de gastos
+│   │   │   ├── TareaController.java     # Módulo de tareas
+│   │   │   ├── CompraController.java    # Módulo de lista de la compra
+│   │   │   ├── CalendarioController.java # Módulo de calendario, bloques y conflictos
 │   │   │   ├── UserController.java      # Perfil, mensajería, fotos
 │   │   │   ├── AdminController.java     # Panel de administración
 │   │   │   └── ApiController.java       # API REST pública
-│   │   └── model/                       # 15 entidades JPA + 5 enums
+│   │   ├── dto/                         # Form DTOs y ApiResponse
+│   │   ├── service/                     # Lógica de negocio por módulo
+│   │   └── model/                       # 16 entidades JPA + 6 enums
 │   └── resources/
 │       ├── application.properties       # Configuración desarrollo (H2 en memoria)
 │       ├── application-container.properties  # Configuración producción (H2 fichero)
@@ -119,7 +127,7 @@ Todas las rutas de `/modulos/**` requieren autenticación. Un usuario sin sesió
 | `GET /modulos/gastos` | gastos.html | Autenticado | Listado de gastos y participantes |
 | `GET /modulos/compra` | compra.html | Autenticado | Listas de la compra e ítems |
 | `GET /modulos/tareas` | tareas.html | Autenticado | Tareas y asignaciones del piso |
-| `GET /modulos/calendario` | calendario.html | Autenticado | Eventos y asistencias |
+| `GET /modulos/calendario` | calendario.html | Autenticado | Eventos, bloques horarios personales y detección de conflictos |
 | `GET /user/{id}` | user.html | ROLE_USER | Perfil de usuario |
 | `GET /admin/` | admin.html | ROLE_ADMIN | Panel de administración |
 
@@ -134,8 +142,11 @@ Todas las rutas de `/modulos/**` requieren autenticación. Un usuario sin sesió
 | `POST /modulos/compra/item/{id}/toggle` | Marcar/desmarcar ítem como comprado (AJAX, devuelve JSON) | Autenticado |
 | `POST /modulos/tareas` | Crear tarea con asignación opcional | Autenticado |
 | `POST /modulos/tareas/{id}/completar` | Completar o reabrir asignación de tarea (AJAX, devuelve JSON) | Autenticado |
-| `POST /modulos/calendario` | Crear evento | Autenticado |
+| `POST /modulos/calendario` | Crear evento del piso | Autenticado |
 | `POST /modulos/calendario/asistencia/{eventoId}` | Cambiar mi asistencia a un evento (AJAX, devuelve JSON) | Autenticado |
+| `POST /modulos/calendario/bloque` | Añadir bloque horario personal | Autenticado |
+| `DELETE /modulos/calendario/bloque/{id}` | Eliminar bloque horario propio (AJAX, devuelve JSON) | Autenticado |
+| `GET /modulos/calendario/conflictos/{eventoId}` | Detectar conflictos del evento con bloques de miembros (AJAX, devuelve JSON) | Autenticado |
 | `POST /user/{id}` | Editar perfil de usuario | ROLE_USER |
 | `POST /user/{id}/pic` | Subir foto de perfil | ROLE_USER |
 | `POST /user/{id}/msg` | Enviar mensaje a otro usuario (WebSocket) | ROLE_USER |
@@ -151,7 +162,7 @@ Todas las rutas de `/modulos/**` requieren autenticación. Un usuario sin sesió
 | **Gastos** | `GET+POST /modulos/gastos` | ✅ Completo | Crear gasto, reparto automático entre miembros, tabla de participantes |
 | **Compra** | `GET+POST /modulos/compra` | ✅ Completo | Añadir ítems, toggle comprado/pendiente vía AJAX |
 | **Tareas** | `GET+POST /modulos/tareas` | ✅ Completo | Crear tarea, asignar a miembro, completar/reabrir vía AJAX |
-| **Calendario** | `GET+POST /modulos/calendario` | ✅ Completo | Crear eventos, confirmar/rechazar asistencia vía AJAX |
+| **Calendario** | `GET+POST /modulos/calendario` | ✅ Completo | Crear eventos, confirmar/rechazar asistencia, bloques horarios personales y detección de conflictos vía AJAX |
 | **Usuario** | `GET+POST /user/{id}` | ✅ Completo | Perfil, foto, mensajería en tiempo real (WebSocket/STOMP) |
 | **Admin** | `GET+POST /admin/` | ✅ Completo | Listar usuarios, habilitar/deshabilitar |
 | **Liquidaciones** | — | ⏳ Pendiente | Entidad y datos en BD; sin vista ni lógica de negocio |
@@ -159,28 +170,27 @@ Todas las rutas de `/modulos/**` requieren autenticación. Un usuario sin sesió
 
 ## Tests (Karate)
 
-Los tests están en `src/test/java/es/ucm/fdi/iw/prueba.feature` y se ejecutan con:
+Los tests se ejecutan automáticamente con:
 
 ```bash
 mvn test
 ```
 
-Los 10 escenarios cubren:
+`PruebaTest` arranca el servidor embebido en un puerto aleatorio (`@SpringBootTest(webEnvironment = RANDOM_PORT)`) y pasa el puerto a Karate mediante una propiedad de sistema. No es necesario levantar el servidor manualmente.
 
-| Nº | Escenario | Tipo |
-|----|-----------|------|
-| 1 | Abrir login y capturar token CSRF | Seguridad |
-| 2 | Login correcto y acceso al home | Autenticación |
-| 3 | Ver dashboard con datos del piso | Smoke test |
-| 4 | Ver listado de gastos | Smoke test |
-| 5 | Ver lista de la compra | Smoke test |
-| 6 | Ver tareas del piso | Smoke test |
-| 7 | Admin accede a panel de administración | Control de acceso |
-| 8 | Usuario sin rol ADMIN recibe 403 en `/admin/` | Control de acceso |
-| 9 | Crear gasto y verificar que aparece en el listado | **Negocio + persistencia** |
-| 10 | Crear tarea y verificar que aparece en el listado | **Negocio + persistencia** |
+Los escenarios están distribuidos en varios ficheros `.feature`:
 
-Los escenarios 9 y 10 verifican el ciclo completo POST → H2 → GET.
+| Feature | Escenarios | Qué cubre |
+|---------|-----------|-----------|
+| `prueba.feature` | 10 | Login, CSRF, smoke tests de vistas, creación de gasto y tarea |
+| `auth.feature` | 3 | Autenticación, acceso sin sesión, redirección a login |
+| `admin.feature` | 3 | Panel ADMIN, toggle habilitado/deshabilitado |
+| `gastos.feature` | 3 | Crear gasto, pagar participación, validación de errores |
+| `compra.feature` | 3 | Añadir ítem, toggle comprado, flujo de compra |
+| `tareas.feature` | 3 | Crear tarea, completar asignación, validación |
+| `calendario.feature` | 7 | Bloques horarios, conflictos AJAX, asistencia a eventos |
+
+Total: **32 escenarios** cubriendo el ciclo completo POST → H2 → GET en todos los módulos.
 
 ## Configuración
 

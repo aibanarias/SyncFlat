@@ -11,15 +11,22 @@ const ws = {
     retries: 3,
 
     /**
-     * Default action when message is received. 
+     * Dispatches an incoming WS message by type.
+     * Payloads with tipo === 'ALERTA' are routed to ws.onAlerta (set by the page/layout).
+     * All other payloads are treated as direct messages and increment the unread counter.
      */
-    receive: (text) => {
-        console.log(text);
-        let p = document.querySelector("#nav-unread");
-        if (p) {
-            p.textContent = +p.textContent + 1;
+    receive: (data) => {
+        if (data && data.tipo === 'ALERTA') {
+            if (typeof ws.onAlerta === 'function') ws.onAlerta(data);
+        } else {
+            console.log(data);
+            let p = document.querySelector('#nav-unread');
+            if (p) p.textContent = +p.textContent + 1;
         }
     },
+
+    /** Hook para alertas de piso. Sobreescribe en el layout para mostrar toasts. */
+    onAlerta: null,
 
     headers: { 'X-CSRF-TOKEN': config.csrf.value },
 
@@ -65,6 +72,7 @@ const ws = {
  * @param {string} url 
  * @param {string} method (GET|POST)
  * @param {*} data, typically a JSON-izable object, like a Message
+ *                a FormData (sent as multipart) or URLSearchParams (sent as normal form)
  * @param {*} headers, to be used instead of defaults, if specified. To send NO headers,
  *  use {}. To send defaults, specify no value, or use false
  * 
@@ -79,18 +87,26 @@ const ws = {
  *  }
  */
 function go(url, method, data = {}, headers = false) {
+    const isFormData = data instanceof FormData;
+    const isURLSearchParams = data instanceof URLSearchParams;
     let params = {
         method: method, // POST, GET, POST, PUT, DELETE, etc.
-        headers: headers === false ? {
-            "Content-Type": "application/json; charset=utf-8",
-        } : headers,
-        body: data instanceof FormData ? data : JSON.stringify(data)
+        headers: headers || {},
+        body: isFormData ? data : isURLSearchParams ? data : JSON.stringify(data)
     };
     if (method === "GET") {
-        // GET requests cannot have body; I could URL-encode, but it would not be used here
+        // GET requests cannot have body, so data goes into query params
         delete params.body;
+        url += "?" + new URLSearchParams(data).toString();
     } else {
         params.headers["X-CSRF-TOKEN"] = config.csrf.value;
+        if (isFormData && !headers) {
+          // NOTE: must *not* set multipart/form-data, as browser will set it with the correct boundary; and if we set it, it will be sent without boundary, and server will not understand it
+        } else if (isURLSearchParams && !headers) {
+          params.headers["Content-Type"] = "application/x-www-form-urlencoded; charset=utf-8";
+        } else if (!headers) {
+          params.headers["Content-Type"] = "application/json; charset=utf-8";
+        }
     }
     console.log("sending", url, params)
     return fetch(url, params)

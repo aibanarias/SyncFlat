@@ -4,6 +4,11 @@
 <head>
     <th:block th:replace="~{fragments/head :: header}" />
     <title>Gastos compartidos - SyncFlat</title>
+    <style>
+        .balance-row-yo    { background: #fff3cd; }
+        .balance-row-acree { background: #d1e7dd; }
+        .accordion-button:not(.collapsed) { background: #f8f9fa; color: inherit; box-shadow: none; }
+    </style>
 </head>
 
 <body class="d-flex flex-column h-100">
@@ -11,145 +16,384 @@
 
     <main class="flex-shrink-0">
         <div class="container mt-4">
-            <h1 class="mb-4">Gastos compartidos</h1>
+
+            <!-- Cabecera -->
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h1 class="mb-0">Gastos compartidos</h1>
+                <button th:if="${piso}" class="btn btn-primary"
+                        data-bs-toggle="modal" data-bs-target="#modal-nuevo-gasto">
+                    + Registrar gasto
+                </button>
+            </div>
+
+            <th:block th:replace="~{fragments/alerts :: alerts}"/>
 
             <!-- Sin piso -->
             <th:block th:unless="${piso}">
                 <div class="alert alert-info">
                     Inicia sesión para gestionar los gastos de tu piso.
                 </div>
-                <p>Módulo para gestionar los gastos del piso de forma clara y justa.
-                    Permite registrar gastos comunes y llevar un control transparente.</p>
             </th:block>
 
             <!-- Con piso -->
             <th:block th:if="${piso}">
 
-                <!-- Formulario crear gasto -->
-                <div class="card mb-4">
-                    <div class="card-header">Registrar nuevo gasto</div>
-                    <div class="card-body">
-                        <form th:action="@{/modulos/gastos}" method="post" class="row g-3">
-                            <div class="col-md-5">
-                                <label for="concepto" class="form-label">Concepto</label>
-                                <input type="text" class="form-control" id="concepto" name="concepto"
-                                    placeholder="Ej: Factura de internet" required>
+                <!-- ══════════════════════════════════════════════════════════
+                     SECCIÓN 1: Balance neto del piso
+                     ══════════════════════════════════════════════════════════ -->
+                <div class="card mb-4" id="balance">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <span class="fw-semibold">⚖ Balance entre compañeros</span>
+                        <span class="badge bg-secondary"
+                              th:text="${#lists.size(balances)} + ' deuda' + (${#lists.size(balances)} == 1 ? '' : 's')">
+                        </span>
+                    </div>
+                    <div class="card-body p-0">
+
+                        <!-- Saldado -->
+                        <div th:if="${#lists.isEmpty(balances)}" class="text-center py-3">
+                            <span class="fs-3 text-success">✓</span>
+                            <p class="mb-0 small fw-semibold text-success">Todo está en orden. No hay deudas pendientes.</p>
+                        </div>
+
+                        <!-- Tabla de deudas netas -->
+                        <th:block th:unless="${#lists.isEmpty(balances)}">
+                            <!-- Nota explicativa del neto -->
+                            <div class="px-3 pt-2 pb-1">
+                                <p class="text-muted small mb-0">
+                                    Importes <strong>netos</strong> tras compensar deudas cruzadas entre cada par.
+                                    El detalle por gasto está en
+                                    <a href="#mis-operaciones" class="text-muted">Mis operaciones</a>
+                                    y en el
+                                    <a href="#historial" class="text-muted">Historial</a>.
+                                </p>
                             </div>
-                            <div class="col-md-3">
-                                <label for="importe" class="form-label">Importe (€)</label>
-                                <input type="number" step="0.01" min="0.01" class="form-control" id="importe" name="importe"
-                                    placeholder="0.00" required>
-                            </div>
-                            <div class="col-md-4 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary w-100">Registrar gasto</button>
-                            </div>
-                        </form>
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Quién debe</th>
+                                        <th></th>
+                                        <th>A quién</th>
+                                        <th class="text-end">Importe neto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="d : ${balances}"
+                                        th:class="${d.deudor().id == u?.id}    ? 'balance-row-yo'
+                                                 : (${d.acreedor().id == u?.id} ? 'balance-row-acree' : '')">
+                                        <td>
+                                            <span class="fw-semibold"
+                                                  th:text="${d.deudor().firstName + ' ' + d.deudor().lastName}">Deudor</span>
+                                            <small class="text-muted ms-1"
+                                                   th:text="${'@' + d.deudor().username}">@u</small>
+                                        </td>
+                                        <td class="text-muted small">debe →</td>
+                                        <td>
+                                            <span th:text="${d.acreedor().firstName + ' ' + d.acreedor().lastName}">Acreedor</span>
+                                            <small class="text-muted ms-1"
+                                                   th:text="${'@' + d.acreedor().username}">@u</small>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-danger"
+                                                  th:text="${#numbers.formatDecimal(d.importe(), 1, 2) + ' €'}">0.00 €</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </th:block>
                     </div>
                 </div>
 
-                <!-- Tabla de gastos -->
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Concepto</th>
-                                <th>Importe</th>
-                                <th>Pagador</th>
-                                <th>Fecha</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="g : ${gastos}">
-                                <td th:text="${g.concepto}">Concepto</td>
-                                <td th:text="${g.importe + ' €'}">0 €</td>
-                                <td th:text="${g.pagador.username}">usuario</td>
-                                <td th:text="${g.fecha}">fecha</td>
-                                <td>
-                                    <span class="badge"
-                                        th:classappend="${g.estado.name() == 'PENDIENTE'} ? 'bg-warning text-dark' : 'bg-success'"
-                                        th:text="${g.estado}"
-                                        th:id="'estado-gasto-' + ${g.id}">PENDIENTE</span>
-                                </td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(gastos)}">
-                                <td colspan="5" class="text-muted text-center">No hay gastos registrados.</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <!-- ══════════════════════════════════════════════════════════
+                     SECCIÓN 2: Mis operaciones pendientes
+                     ══════════════════════════════════════════════════════════ -->
+                <div class="card mb-4" id="mis-operaciones" th:if="${u != null}">
+                    <div class="card-header fw-semibold">👤 Mis operaciones pendientes</div>
+                    <div class="card-body">
+
+                        <!-- Todo en orden -->
+                        <div th:if="${#lists.isEmpty(loDebo) and #lists.isEmpty(meDeben)}"
+                             class="text-center py-2">
+                            <span class="fs-3 text-success">✓</span>
+                            <p class="mb-0 small fw-semibold text-success">No tienes operaciones pendientes.</p>
+                        </div>
+
+                        <!-- Cuando hay algo pendiente: muestra nota explicativa del neto -->
+                        <div th:unless="${#lists.isEmpty(loDebo) and #lists.isEmpty(meDeben)}"
+                             class="alert alert-light py-2 px-3 small mb-3">
+                            El <a href="#balance" class="alert-link">balance neto</a> resulta de restar
+                            lo que recibirás a lo que debes pagar en los gastos concretos de abajo.
+                            <span th:if="${totalLoDebo.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                                Total bruto a pagar:
+                                <strong th:text="${#numbers.formatDecimal(totalLoDebo, 1, 2) + ' €'}">0 €</strong>.
+                            </span>
+                            <span th:if="${totalMeDeben.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                                Total bruto a recibir:
+                                <strong th:text="${#numbers.formatDecimal(totalMeDeben, 1, 2) + ' €'}">0 €</strong>.
+                            </span>
+                        </div>
+
+                        <!-- Lo que debo: gastos donde soy deudor -->
+                        <div th:unless="${#lists.isEmpty(loDebo)}" class="mb-3">
+                            <h6 class="text-danger fw-semibold mb-2">
+                                Tengo que pagar
+                                <span class="badge bg-danger ms-1 fw-normal"
+                                      th:text="${#numbers.formatDecimal(totalLoDebo, 1, 2) + ' €'}">0 €</span>
+                            </h6>
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Gasto</th>
+                                        <th>Pagador</th>
+                                        <th class="text-end">Mi parte</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="pg : ${loDebo}">
+                                        <td th:text="${pg.gasto.concepto}">concepto</td>
+                                        <td class="small text-muted">
+                                            <span th:text="${pg.gasto.pagador.firstName + ' ' + pg.gasto.pagador.lastName}">Pagador</span>
+                                            <span class="ms-1" th:text="${'@' + pg.gasto.pagador.username}">@u</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-danger"
+                                                  th:text="${#numbers.formatDecimal(pg.importeAsignado, 1, 2) + ' €'}">0 €</span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-success pagar-parte"
+                                                    th:attr="data-pg-id=${pg.id}">
+                                                Pagar mi parte
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Lo que me deben: gastos donde soy pagador -->
+                        <div th:unless="${#lists.isEmpty(meDeben)}">
+                            <h6 class="text-success fw-semibold mb-2">
+                                Pendiente de recibir
+                                <span class="badge bg-success ms-1 fw-normal"
+                                      th:text="${#numbers.formatDecimal(totalMeDeben, 1, 2) + ' €'}">0 €</span>
+                            </h6>
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Gasto</th>
+                                        <th>Deudor</th>
+                                        <th class="text-end">Importe</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="pg : ${meDeben}">
+                                        <td th:text="${pg.gasto.concepto}">concepto</td>
+                                        <td class="small text-muted">
+                                            <span th:text="${pg.usuario.firstName + ' ' + pg.usuario.lastName}">Deudor</span>
+                                            <span class="ms-1" th:text="${'@' + pg.usuario.username}">@u</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge bg-success"
+                                                  th:text="${#numbers.formatDecimal(pg.importeAsignado, 1, 2) + ' €'}">0 €</span>
+                                        </td>
+                                        <td class="text-muted small">Pendiente</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
                 </div>
 
-                <!-- Detalle participantes -->
-                <div th:if="${not #lists.isEmpty(participantes)}">
-                    <h3 class="mt-4">Liquidación por participante</h3>
-                    <table class="table table-sm align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Gasto</th>
-                                <th>Participante</th>
-                                <th>Importe asignado</th>
-                                <th>Estado de pago</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="pg : ${participantes}">
-                                <td th:text="${pg.gasto.concepto}">gasto</td>
-                                <td th:text="${pg.usuario.firstName + ' ' + pg.usuario.lastName}">usuario</td>
-                                <td th:text="${pg.importeAsignado + ' €'}">0 €</td>
-                                <td>
-                                    <!-- Ya pagado: badge verde (cualquier usuario) -->
-                                    <span th:if="${pg.pagado}" class="badge bg-success">Pagado</span>
+                <!-- ══════════════════════════════════════════════════════════
+                     SECCIÓN 3: Historial de gastos
+                     ══════════════════════════════════════════════════════════ -->
+                <div class="card" id="historial">
+                    <div class="card-header fw-semibold">
+                        🧾 Historial de gastos
+                        <span class="badge bg-secondary ms-1"
+                              th:text="${#lists.size(historial)}">0</span>
+                    </div>
 
-                                    <!-- Pendiente, es la fila del usuario logueado: botón de acción -->
-                                    <button th:if="${not pg.pagado and u != null and pg.usuario.id == u.id}"
-                                        class="btn btn-sm btn-outline-success pagar-parte"
-                                        th:attr="data-pg-id=${pg.id},data-gasto-id=${pg.gasto.id}">
-                                        Pagar mi parte
-                                    </button>
+                    <!-- Sin gastos -->
+                    <div th:if="${#lists.isEmpty(historial)}" class="card-body text-center text-muted py-4">
+                        Aún no hay gastos registrados. Pulsa «Registrar gasto» para empezar.
+                    </div>
 
-                                    <!-- Pendiente, fila de otro usuario: solo lectura -->
-                                    <span th:if="${not pg.pagado and (u == null or pg.usuario.id != u.id)}"
-                                        class="badge bg-warning text-dark">Pendiente</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <!-- Accordion de gastos -->
+                    <div th:unless="${#lists.isEmpty(historial)}"
+                         class="accordion accordion-flush" id="accordion-gastos">
+
+                        <div class="accordion-item" th:each="gd : ${historial}">
+
+                            <!-- Cabecera del acordeón -->
+                            <h2 class="accordion-header" th:id="'h-' + ${gd.gasto.id}">
+                                <button class="accordion-button collapsed py-2"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        th:attr="data-bs-target='#d-' + ${gd.gasto.id},
+                                                  aria-controls='d-' + ${gd.gasto.id}">
+
+                                    <span class="fw-semibold me-2"
+                                          th:text="${gd.gasto.concepto}">Concepto</span>
+                                    <span class="badge bg-primary me-2"
+                                          th:text="${#numbers.formatDecimal(gd.gasto.importe, 1, 2) + ' €'}">0 €</span>
+                                    <span class="text-muted small me-2"
+                                          th:text="${gd.gasto.fecha}">fecha</span>
+                                    <span class="badge me-1"
+                                          th:classappend="${gd.gasto.estado.name() == 'PENDIENTE'} ? 'bg-warning text-dark' : 'bg-success'"
+                                          th:text="${gd.gasto.estado}">ESTADO</span>
+
+                                    <!--
+                                        importePendiente() ya excluye la participación del pagador,
+                                        por lo que este importe coincide con lo que muestran el
+                                        balance y las operaciones pendientes.
+                                    -->
+                                    <span th:if="${gd.importePendiente().compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+                                          class="badge bg-danger ms-1"
+                                          th:text="${#numbers.formatDecimal(gd.importePendiente(), 1, 2) + ' € pendiente'}">
+                                    </span>
+
+                                </button>
+                            </h2>
+
+                            <!-- Cuerpo del acordeón -->
+                            <div th:id="'d-' + ${gd.gasto.id}"
+                                 class="accordion-collapse collapse"
+                                 th:attr="aria-labelledby='h-' + ${gd.gasto.id}">
+                                <div class="accordion-body pt-2 pb-3">
+
+                                    <p class="text-muted small mb-2">
+                                        <strong>Pagador:</strong>
+                                        <span th:text="${gd.gasto.pagador.firstName + ' ' + gd.gasto.pagador.lastName}">nombre</span>
+                                        <span th:text="${'(@' + gd.gasto.pagador.username + ')'}">@u</span>
+                                        &nbsp;·&nbsp;
+                                        <strong>Fecha:</strong> <span th:text="${gd.gasto.fecha}">fecha</span>
+                                        &nbsp;·&nbsp;
+                                        <strong>Total:</strong>
+                                        <span th:text="${#numbers.formatDecimal(gd.gasto.importe, 1, 2) + ' €'}">0 €</span>
+                                    </p>
+
+                                    <table class="table table-sm align-middle mb-0"
+                                           th:if="${not #lists.isEmpty(gd.participantes)}">
+                                        <thead class="table-light small">
+                                            <tr>
+                                                <th>Participante</th>
+                                                <th class="text-end">Asignado</th>
+                                                <th>Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="pg : ${gd.participantes}"
+                                                th:classappend="${u != null and pg.usuario.id == u.id} ? 'table-light fw-semibold' : ''">
+                                                <td>
+                                                    <span th:text="${pg.usuario.firstName + ' ' + pg.usuario.lastName}">nombre</span>
+                                                    <small class="text-muted ms-1"
+                                                           th:text="${'@' + pg.usuario.username}">@u</small>
+                                                    <!-- Indicador del pagador del gasto -->
+                                                    <span th:if="${pg.usuario.id == gd.gasto.pagador.id}"
+                                                          class="badge bg-info text-dark ms-1 small">pagador</span>
+                                                </td>
+                                                <td class="text-end"
+                                                    th:text="${#numbers.formatDecimal(pg.importeAsignado, 1, 2) + ' €'}">0 €</td>
+                                                <td>
+                                                    <!-- Pagado -->
+                                                    <span th:if="${pg.pagado}"
+                                                          class="badge bg-success">Pagado</span>
+
+                                                    <!--
+                                                        Pendiente + soy yo + NO soy el pagador del gasto
+                                                        → botón de acción real.
+                                                        Si soy el pagador, mi "deuda" es con el piso, no
+                                                        con ningún otro miembro: no hay que mostrar el botón.
+                                                    -->
+                                                    <button th:if="${not pg.pagado
+                                                                    and u != null
+                                                                    and pg.usuario.id == u.id
+                                                                    and pg.gasto.pagador.id != u.id}"
+                                                            class="btn btn-sm btn-outline-success pagar-parte"
+                                                            th:attr="data-pg-id=${pg.id}">
+                                                        Pagar mi parte
+                                                    </button>
+
+                                                    <!-- Pendiente: soy el pagador (mi parte está implícitamente saldada) -->
+                                                    <span th:if="${not pg.pagado
+                                                                  and u != null
+                                                                  and pg.usuario.id == u.id
+                                                                  and pg.gasto.pagador.id == u.id}"
+                                                          class="badge bg-secondary">
+                                                        Pagador — saldado
+                                                    </span>
+
+                                                    <!-- Pendiente: otro usuario distinto de mí -->
+                                                    <span th:if="${not pg.pagado and (u == null or pg.usuario.id != u.id)}"
+                                                          class="badge bg-warning text-dark">Pendiente</span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                    <p th:if="${#lists.isEmpty(gd.participantes)}"
+                                       class="text-muted small mb-0">Sin participantes registrados.</p>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
+
             </th:block>
-
-            <p class="mt-4">
-                <a th:href="@{/}">← Volver al inicio</a>
-            </p>
         </div>
     </main>
 
+    <!-- MODAL: Registrar nuevo gasto -->
+    <div class="modal fade" id="modal-nuevo-gasto" tabindex="-1"
+         aria-labelledby="modal-gasto-label" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-gasto-label">Registrar nuevo gasto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form th:action="@{/modulos/gastos}" method="post">
+                    <div class="modal-body">
+                        <p class="text-muted small mb-3">
+                            El importe se repartirá a partes iguales entre todos los miembros activos del piso.
+                            Tú quedas registrado como pagador.
+                        </p>
+                        <div class="mb-3">
+                            <label for="concepto" class="form-label">Concepto <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="concepto" name="concepto"
+                                   placeholder="Ej: Factura de internet" maxlength="200" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="importe" class="form-label">Importe total (€) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" min="0.01" class="form-control"
+                                   id="importe" name="importe" placeholder="0.00" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Registrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <th:block th:replace="~{fragments/footer.html :: footer}" />
 
-    <!-- AJAX pagar participación (usa go() de iw.js) -->
+    <!-- AJAX: pagar participación → reload para mantener UI coherente -->
     <script th:if="${piso}">
         document.querySelectorAll('.pagar-parte').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                var pgId = this.getAttribute('data-pg-id');
-                var gastoId = this.getAttribute('data-gasto-id');
-                var button = this;
-
-                go('/modulos/gastos/participante/' + pgId + '/pagar', 'POST')
-                    .then(function (data) {
-                        if (data.error) return;
-
-                        var badge = document.createElement('span');
-                        badge.className = 'badge bg-success';
-                        badge.textContent = 'Pagado';
-                        button.parentNode.replaceChild(badge, button);
-
-                        if (data.liquidado) {
-                            var estadoBadge = document.getElementById('estado-gasto-' + gastoId);
-                            if (estadoBadge) {
-                                estadoBadge.className = 'badge bg-success';
-                                estadoBadge.textContent = 'LIQUIDADO';
-                            }
-                        }
-                    });
+                this.disabled = true;
+                go('/modulos/gastos/participante/' + this.dataset.pgId + '/pagar', 'POST')
+                    .then(function () { location.reload(); })
+                    .catch(function (err) { btn.disabled = false; console.error(err); });
             });
         });
     </script>

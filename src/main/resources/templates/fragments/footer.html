@@ -11,7 +11,9 @@
         <div class="container">
             <span class="text-muted">SyncFlat — Gestión integral para pisos compartidos. IW 2024-25. Accede a la última
                 versión en el
-                <a href="https://github.com/manuel-freire/iw/blob/main/plantilla">repositorio</a>.</span>
+                <a href="https://github.com/manuel-freire/iw/blob/main/plantilla">repositorio</a>.
+                &nbsp;·&nbsp;
+                <a th:href="@{/autores}" href="/autores" class="text-muted">Autores</a>.</span>
         </div>
         <!-- Bootstrap -->
         <script th:src="@{/js/bootstrap.bundle-5.3.3.js}" src="js/bootstrap.bundle-5.3.3.js"></script>
@@ -19,6 +21,36 @@
         <!-- Websockets -->
         <script th:src="@{/js/stomp.js}" src="js/stomp.js"></script>
         <script th:src="@{/js/iw.js}" src="js/iw.js"></script>
+
+        <!-- Handler global de alertas de piso por WebSocket -->
+        <script>
+            ws.onAlerta = function (data) {
+                // Muestra badge de campana en la navbar
+                var btn   = document.getElementById('btn-alertas-ws');
+                var badge = document.getElementById('nav-alertas-badge');
+                if (btn && badge) {
+                    btn.style.display = '';
+                    badge.textContent = (+badge.textContent || 0) + 1;
+                }
+                // Muestra toast Bootstrap
+                var container = document.getElementById('alerta-toast-container');
+                if (!container) return;
+                var colorClass = data.tipoAlerta === 'URGENTE'       ? 'bg-danger text-white'
+                               : data.tipoAlerta === 'RECORDATORIO'  ? 'bg-warning text-dark'
+                               :                                        'bg-info text-dark';
+                var toastId = 'toast-alerta-' + Date.now();
+                container.insertAdjacentHTML('beforeend',
+                    '<div id="' + toastId + '" class="toast show align-items-center border-0 ' + colorClass + '" role="alert" aria-live="assertive">' +
+                    '<div class="d-flex">' +
+                    '<div class="toast-body"><strong>' + data.tipoAlerta + '</strong> — ' + data.mensaje + '</div>' +
+                    '<button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>' +
+                    '</div></div>');
+                setTimeout(function () {
+                    var t = document.getElementById(toastId);
+                    if (t) t.remove();
+                }, 6000);
+            };
+        </script>
 
         <!-- Otros scripts de interacción, aquí -->
     </footer>

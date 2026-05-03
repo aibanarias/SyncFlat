@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
  */
 @Controller()
 @RequestMapping("user")
-public class UserController {
+public class UserController extends BaseController {
 
   private static final Logger log = LogManager.getLogger(UserController.class);
 
@@ -69,13 +69,6 @@ public class UserController {
 
   @Autowired
   private PasswordEncoder passwordEncoder;
-
-  @ModelAttribute
-  public void populateModel(HttpSession session, Model model) {
-    for (String name : new String[] { "u", "url", "ws", "topics"}) {
-      model.addAttribute(name, session.getAttribute(name));
-    }
-  }
 
   /**
    * Se lanza cuando un usuario intenta modificar un perfil que no es el suyo

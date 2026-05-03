@@ -4,147 +4,732 @@
 <head>
     <th:block th:replace="~{fragments/head :: header}" />
     <title>Calendario - SyncFlat</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" />
+    <style>
+        #syncflat-calendar { min-height: 650px; }
+        .fc-event { cursor: pointer; }
+        .fc-daygrid-event { white-space: normal; }
+        .filtro-dot {
+            display: inline-block;
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+    </style>
 </head>
 
 <body class="d-flex flex-column h-100">
     <header th:replace="~{fragments/nav.html :: nav}"></header>
 
     <main class="flex-shrink-0">
-        <div class="container mt-4">
-            <h1 class="mb-4">Calendario</h1>
+        <div class="container-fluid px-3 mt-3">
+            <th:block th:replace="~{fragments/alerts :: alerts}"/>
 
-            <!-- Sin piso -->
             <th:block th:unless="${piso}">
-                <div class="alert alert-info">
-                    Inicia sesión para ver los eventos de tu piso.
-                </div>
-                <p>Módulo para coordinar horarios y planificar eventos compartidos del piso.</p>
+                <div class="alert alert-info">Inicia sesión para ver el calendario de tu piso.</div>
             </th:block>
 
-            <!-- Con piso -->
             <th:block th:if="${piso}">
 
-                <!-- Formulario crear evento -->
-                <div class="card mb-4">
-                    <div class="card-header">Crear nuevo evento</div>
-                    <div class="card-body">
-                        <form th:action="@{/modulos/calendario}" method="post" class="row g-3">
-                            <div class="col-md-4">
-                                <label for="titulo" class="form-label">Título</label>
-                                <input type="text" class="form-control" id="titulo" name="titulo"
-                                    placeholder="Ej: Cena de grupo" required>
+                <!-- Config data for JS (read via dataset) -->
+                <div id="cal-meta"
+                     th:attr="data-usuario-id=${u != null ? u.id : -1},data-piso-nombre=${piso.nombre}"
+                     style="display:none"></div>
+
+                <div class="row g-3">
+
+                    <!-- ══════════════════════════════════════════════════════
+                         SIDEBAR: filtros + leyenda
+                         ══════════════════════════════════════════════════════ -->
+                    <div class="col-xl-2 col-lg-3">
+
+                        <div class="card mb-3">
+                            <div class="card-header small fw-semibold py-2">
+                                🏠 <span th:text="${piso.nombre}">Piso</span>
                             </div>
-                            <div class="col-md-8">
-                                <label for="descripcion" class="form-label">Descripción</label>
-                                <input type="text" class="form-control" id="descripcion" name="descripcion"
-                                    placeholder="Descripción del evento">
+                            <div class="card-body p-2">
+                                <p class="small text-muted mb-2">Filtrar personas:</p>
+                                <div th:each="mp : ${miembros}" class="form-check d-flex align-items-center gap-2 mb-1">
+                                    <input class="form-check-input filtro-cb"
+                                           type="checkbox"
+                                           checked
+                                           th:id="'fcb-' + ${mp.usuario.id}"
+                                           th:value="${mp.usuario.id}">
+                                    <label class="form-check-label small"
+                                           th:for="'fcb-' + ${mp.usuario.id}"
+                                           th:text="${mp.usuario.firstName + ' ' + mp.usuario.lastName}">Nombre</label>
+                                </div>
+                                <div class="mt-2 d-flex gap-1">
+                                    <button id="btn-todos" class="btn btn-xs btn-outline-secondary btn-sm flex-fill">Todos</button>
+                                    <button id="btn-solo-yo" class="btn btn-xs btn-outline-secondary btn-sm flex-fill">Solo yo</button>
+                                </div>
                             </div>
-                            <div class="col-md-4">
-                                <label for="fechaInicio" class="form-label">Inicio</label>
-                                <input type="datetime-local" class="form-control" id="fechaInicio" name="fechaInicio"
-                                    required>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header small fw-semibold py-2">Leyenda</div>
+                            <div class="card-body p-2 small">
+                                <p class="text-muted mb-1 fw-semibold">Eventos del piso</p>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="filtro-dot" style="background:#ffc107"></span> Propuesto
+                                </div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="filtro-dot" style="background:#198754"></span> Aprobado
+                                </div>
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="filtro-dot" style="background:#dc3545"></span> Rechazado
+                                </div>
+                                <hr class="my-1">
+                                <p class="text-muted mb-1 fw-semibold">Bloques personales</p>
+                                <!-- Los puntos de color se insertan por JS con el color de cada usuario -->
+                                <div id="leyenda-usuarios"></div>
+                                <p class="text-muted mt-1 mb-0" style="font-size:0.7rem">
+                                    💼 Trabajo &nbsp; 📚 Clases &nbsp; 🏃 Entrenamiento &nbsp; 📌 Otro
+                                </p>
                             </div>
-                            <div class="col-md-4">
-                                <label for="fechaFin" class="form-label">Fin</label>
-                                <input type="datetime-local" class="form-control" id="fechaFin" name="fechaFin"
-                                    required>
-                            </div>
-                            <div class="col-md-4 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary w-100">Crear evento</button>
-                            </div>
-                        </form>
+                        </div>
+
                     </div>
-                </div>
 
-                <!-- Listado de eventos -->
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Evento</th>
-                                <th>Inicio</th>
-                                <th>Fin</th>
-                                <th>Creador</th>
-                                <th>Estado asistentes</th>
-                                <th>Mi asistencia</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="e : ${eventos}">
-                                <td>
-                                    <strong th:text="${e.titulo}">Evento</strong>
-                                    <br><small class="text-muted" th:text="${e.descripcion}">desc</small>
-                                </td>
-                                <td th:text="${#temporals.format(e.fechaInicio, 'dd/MM/yyyy HH:mm')}">fecha</td>
-                                <td th:text="${#temporals.format(e.fechaFin, 'dd/MM/yyyy HH:mm')}">fecha</td>
-                                <td th:text="${e.creador.username}">usr</td>
+                    <!-- ══════════════════════════════════════════════════════
+                         CALENDARIO PRINCIPAL
+                         ══════════════════════════════════════════════════════ -->
+                    <div class="col-xl-10 col-lg-9">
+                        <div id="syncflat-calendar"></div>
+                    </div>
 
-                                <!-- Columna de solo lectura: estado de todos los miembros -->
-                                <td>
-                                    <th:block th:each="ae : ${asistencias}" th:if="${ae.evento.id == e.id}">
-                                        <span class="badge mb-1"
-                                            th:classappend="${ae.estado.name() == 'CONFIRMADO'} ? 'bg-success' : (${ae.estado.name() == 'RECHAZADO'} ? 'bg-danger' : 'bg-secondary')"
-                                            th:text="${ae.usuario.username + ': ' + ae.estado}">usr: ESTADO</span>
-                                    </th:block>
-                                </td>
-
-                                <!-- Columna de acción: el usuario logueado cambia su propio estado -->
-                                <td>
-                                    <th:block th:if="${u}"
-                                        th:with="miAsistencia=${asistencias.?[usuario.id == __${u.id}__ and evento.id == __${e.id}__]}">
-                                        <button class="btn btn-sm toggle-asistencia"
-                                            th:classappend="${!miAsistencia.isEmpty() and miAsistencia[0].estado.name() == 'CONFIRMADO'} ? 'btn-success' : (${!miAsistencia.isEmpty() and miAsistencia[0].estado.name() == 'RECHAZADO'} ? 'btn-outline-danger' : 'btn-outline-secondary')"
-                                            th:attr="data-evento-id=${e.id}"
-                                            th:text="${miAsistencia.isEmpty()} ? 'Sin confirmar' : (${miAsistencia[0].estado.name() == 'CONFIRMADO'} ? 'Confirmo asistencia' : (${miAsistencia[0].estado.name() == 'RECHAZADO'} ? 'No asistiré' : 'Pendiente'))">
-                                            Sin confirmar
-                                        </button>
-                                    </th:block>
-                                    <span class="text-muted small" th:unless="${u}">—</span>
-                                </td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(eventos)}">
-                                <td colspan="6" class="text-muted text-center">No hay eventos registrados.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                </div><!-- /row -->
             </th:block>
-
-            <p class="mt-4">
-                <a th:href="@{/}">← Volver al inicio</a>
-            </p>
         </div>
     </main>
 
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MODAL: Crear evento o bloque
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div class="modal fade" id="modal-crear" tabindex="-1" aria-labelledby="modal-crear-label" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-crear-label">Nueva entrada</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs mb-3" id="crear-tabs">
+                        <li class="nav-item">
+                            <button class="nav-link active" id="tab-btn-evento"
+                                    data-bs-toggle="tab" data-bs-target="#tab-evento" data-tab="evento">
+                                🗓 Evento del piso
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="tab-btn-bloque"
+                                    data-bs-toggle="tab" data-bs-target="#tab-bloque" data-tab="bloque">
+                                📌 Mi bloque personal
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content">
+
+                        <!-- ── Tab Evento ──────────────────────────────── -->
+                        <div class="tab-pane fade show active" id="tab-evento">
+                            <p class="small text-muted mb-3">Quedará en estado <strong>Propuesto</strong> hasta que otro miembro lo apruebe.</p>
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold">Título <span class="text-danger">*</span></label>
+                                <input id="ev-titulo" type="text" class="form-control" placeholder="Ej: Cena del viernes" maxlength="120" />
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold">Descripción</label>
+                                <input id="ev-descripcion" type="text" class="form-control" placeholder="Detalles opcionales" maxlength="255" />
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Inicio <span class="text-danger">*</span></label>
+                                    <input id="ev-inicio" type="datetime-local" class="form-control" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Fin <span class="text-danger">*</span></label>
+                                    <input id="ev-fin" type="datetime-local" class="form-control" />
+                                </div>
+                            </div>
+                            <!-- Recurrencia -->
+                            <div class="border-top pt-3">
+                                <label class="form-label small fw-semibold">Repetición</label>
+                                <select id="ev-recurrencia" class="form-select form-select-sm mb-2">
+                                    <option value="NINGUNA">Sin repetir</option>
+                                    <option value="DIARIA">Todos los días — 12 ocurrencias</option>
+                                    <option value="SEMANAL">Todas las semanas — 12 semanas</option>
+                                    <option value="MENSUAL">Todos los meses — mismo día (12 meses)</option>
+                                    <option value="PERSONALIZADA">Días específicos de la semana…</option>
+                                </select>
+                                <div id="ev-dias-wrapper" class="d-none mb-2">
+                                    <label class="form-label small">Días de la semana:</label>
+                                    <div class="d-flex gap-3 flex-wrap">
+                                        <div class="form-check"><input class="form-check-input ev-dia" type="checkbox" value="1" id="ev-d1"><label class="form-check-label small" for="ev-d1">Lun</label></div>
+                                        <div class="form-check"><input class="form-check-input ev-dia" type="checkbox" value="2" id="ev-d2"><label class="form-check-label small" for="ev-d2">Mar</label></div>
+                                        <div class="form-check"><input class="form-check-input ev-dia" type="checkbox" value="3" id="ev-d3"><label class="form-check-label small" for="ev-d3">Mié</label></div>
+                                        <div class="form-check"><input class="form-check-input ev-dia" type="checkbox" value="4" id="ev-d4"><label class="form-check-label small" for="ev-d4">Jue</label></div>
+                                        <div class="form-check"><input class="form-check-input ev-dia" type="checkbox" value="5" id="ev-d5"><label class="form-check-label small" for="ev-d5">Vie</label></div>
+                                        <div class="form-check"><input class="form-check-input ev-dia" type="checkbox" value="6" id="ev-d6"><label class="form-check-label small" for="ev-d6">Sáb</label></div>
+                                        <div class="form-check"><input class="form-check-input ev-dia" type="checkbox" value="7" id="ev-d7"><label class="form-check-label small" for="ev-d7">Dom</label></div>
+                                    </div>
+                                </div>
+                                <div id="ev-rec-info" class="text-muted small d-none"></div>
+                            </div>
+                        </div>
+
+                        <!-- ── Tab Bloque ──────────────────────────────── -->
+                        <div class="tab-pane fade" id="tab-bloque">
+                            <p class="small text-muted mb-3">Solo visible en tu nombre. Tus compañeros lo verán para coordinar eventos.</p>
+                            <div class="mb-2">
+                                <label class="form-label small fw-semibold">Tipo <span class="text-danger">*</span></label>
+                                <select id="bl-tipo" class="form-select">
+                                    <option value="TRABAJO">💼 Trabajo</option>
+                                    <option value="CLASES">📚 Clases</option>
+                                    <option value="ENTRENAMIENTO">🏃 Entrenamiento</option>
+                                    <option value="OTRO">📌 Otro (especifica abajo)</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label id="bl-desc-label" class="form-label small fw-semibold">Descripción</label>
+                                <input id="bl-descripcion" type="text" class="form-control"
+                                       placeholder="Ej: Trabajo en remoto" maxlength="255" />
+                                <div id="bl-desc-hint" class="form-text text-primary d-none">
+                                    📌 Para tipo «Otro» es obligatorio indicar un nombre (ej: Médico, Cena familiar, Tutoría, Viaje…)
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Inicio <span class="text-danger">*</span></label>
+                                    <input id="bl-inicio" type="datetime-local" class="form-control" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold">Fin <span class="text-danger">*</span></label>
+                                    <input id="bl-fin" type="datetime-local" class="form-control" />
+                                </div>
+                            </div>
+                            <!-- Recurrencia -->
+                            <div class="border-top pt-3">
+                                <label class="form-label small fw-semibold">Repetición</label>
+                                <select id="bl-recurrencia" class="form-select form-select-sm mb-2">
+                                    <option value="NINGUNA">Sin repetir</option>
+                                    <option value="DIARIA">Todos los días — 12 ocurrencias</option>
+                                    <option value="SEMANAL">Todas las semanas — 12 semanas</option>
+                                    <option value="MENSUAL">Todos los meses — mismo día (12 meses)</option>
+                                    <option value="PERSONALIZADA">Días específicos de la semana…</option>
+                                </select>
+                                <div id="bl-dias-wrapper" class="d-none mb-2">
+                                    <label class="form-label small">Días de la semana:</label>
+                                    <div class="d-flex gap-3 flex-wrap">
+                                        <div class="form-check"><input class="form-check-input bl-dia" type="checkbox" value="1" id="bl-d1"><label class="form-check-label small" for="bl-d1">Lun</label></div>
+                                        <div class="form-check"><input class="form-check-input bl-dia" type="checkbox" value="2" id="bl-d2"><label class="form-check-label small" for="bl-d2">Mar</label></div>
+                                        <div class="form-check"><input class="form-check-input bl-dia" type="checkbox" value="3" id="bl-d3"><label class="form-check-label small" for="bl-d3">Mié</label></div>
+                                        <div class="form-check"><input class="form-check-input bl-dia" type="checkbox" value="4" id="bl-d4"><label class="form-check-label small" for="bl-d4">Jue</label></div>
+                                        <div class="form-check"><input class="form-check-input bl-dia" type="checkbox" value="5" id="bl-d5"><label class="form-check-label small" for="bl-d5">Vie</label></div>
+                                        <div class="form-check"><input class="form-check-input bl-dia" type="checkbox" value="6" id="bl-d6"><label class="form-check-label small" for="bl-d6">Sáb</label></div>
+                                        <div class="form-check"><input class="form-check-input bl-dia" type="checkbox" value="7" id="bl-d7"><label class="form-check-label small" for="bl-d7">Dom</label></div>
+                                    </div>
+                                </div>
+                                <div id="bl-rec-info" class="text-muted small d-none"></div>
+                            </div>
+                        </div>
+
+                    </div><!-- /tab-content -->
+                    <div id="crear-error" class="alert alert-danger mt-3 d-none small"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn-guardar-crear">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MODAL: Detalle de evento / bloque (se abre al pulsar sobre uno)
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div class="modal fade" id="modal-detalle" tabindex="-1" aria-labelledby="modal-detalle-label" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-detalle-titulo">Detalle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modal-detalle-body">
+                    <!-- Contenido dinámico -->
+                </div>
+                <div class="modal-footer d-flex flex-wrap gap-2" id="modal-detalle-acciones">
+                    <!-- Acciones dinámicas -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <th:block th:replace="~{fragments/footer.html :: footer}" />
 
-    <!-- AJAX toggle asistencia (usa go() de iw.js, mismo patrón que tareas) -->
+    <!-- FullCalendar JS (después de Bootstrap bundle) -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
     <script th:if="${piso}">
-        var estadoTexto = {
-            'CONFIRMADO': 'Confirmo asistencia',
-            'RECHAZADO':  'No asistiré',
-            'PENDIENTE':  'Pendiente'
-        };
-        var estadoClase = {
-            'CONFIRMADO': 'btn-success',
-            'RECHAZADO':  'btn-outline-danger',
-            'PENDIENTE':  'btn-outline-secondary'
+    document.addEventListener('DOMContentLoaded', function () {
+
+        /* ── Contexto ──────────────────────────────────────────��────────────── */
+        const meta      = document.getElementById('cal-meta');
+        const usuarioId = +(meta.dataset.usuarioId ?? -1);
+        const LS_KEY    = 'syncflat-filtros-' + meta.dataset.pisoNombre;
+
+        /* ── Filtros: carga desde localStorage si existe ─────────────────── */
+        let filtrosActivos = new Set();
+        const cbAll = document.querySelectorAll('.filtro-cb');
+        cbAll.forEach(cb => filtrosActivos.add(+cb.value)); // todos activos por defecto
+        try {
+            const saved = JSON.parse(localStorage.getItem(LS_KEY));
+            if (Array.isArray(saved)) {
+                filtrosActivos = new Set(saved.map(Number));
+                cbAll.forEach(cb => {
+                    cb.checked = filtrosActivos.has(+cb.value);
+                    cb.closest('.form-check').style.opacity = cb.checked ? '1' : '0.4';
+                });
+            }
+        } catch (_) {}
+
+        function guardarFiltros() {
+            try { localStorage.setItem(LS_KEY, JSON.stringify([...filtrosActivos])); } catch (_) {}
+        }
+
+        /* ── Modales ────────────────────────────────────────────────────────── */
+        const modalCrearEl   = document.getElementById('modal-crear');
+        const modalDetalleEl = document.getElementById('modal-detalle');
+        const modalCrear     = new bootstrap.Modal(modalCrearEl);
+        const modalDetalle   = new bootstrap.Modal(modalDetalleEl);
+
+        let tabActual    = 'evento';
+        let clickedDate  = null; // guarda el Date del slot pulsado para recurrencia semanal
+        modalCrearEl.querySelectorAll('[data-tab]').forEach(btn =>
+            btn.addEventListener('click', () => { tabActual = btn.dataset.tab; }));
+
+        /* ══════════════════════════════════════════════════════════════════
+           RECURRENCIA — UI helpers
+           ══════════════════════════════════════════════════════════════════ */
+        const REC_INFO = {
+            DIARIA:        'Se crearán 12 ocurrencias diarias a partir de esta fecha.',
+            SEMANAL:       'Se crearán 12 ocurrencias el mismo día de la semana.',
+            MENSUAL:       'Se repetirá el mismo día del mes durante 12 meses.',
+            PERSONALIZADA: 'Selecciona los días que se repetirá cada semana (12 semanas).'
         };
 
-        document.querySelectorAll('.toggle-asistencia').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var eventoId = this.getAttribute('data-evento-id');
-                var button = this;
-                go('/modulos/calendario/asistencia/' + eventoId, 'POST')
-                    .then(function (data) {
-                        if (!data.error) {
-                            var estado = data.estado;
-                            button.textContent = estadoTexto[estado] || estado;
-                            button.className = 'btn btn-sm toggle-asistencia ' + (estadoClase[estado] || 'btn-outline-secondary');
-                        }
-                    });
+        function isoDay(date) {
+            // JS: 0=dom → ISO: 7=dom, 1-6=lun-sáb
+            const d = date.getDay();
+            return d === 0 ? 7 : d;
+        }
+
+        function actualizarRecUI(prefix) {
+            const rec     = document.getElementById(prefix + '-recurrencia').value;
+            const wrapper = document.getElementById(prefix + '-dias-wrapper');
+            const info    = document.getElementById(prefix + '-rec-info');
+
+            wrapper.classList.toggle('d-none', rec !== 'PERSONALIZADA');
+            if (rec === 'NINGUNA') {
+                info.classList.add('d-none');
+            } else {
+                info.textContent = REC_INFO[rec] || '';
+                info.classList.remove('d-none');
+            }
+
+            // Para SEMANAL: preseleccionar el día del slot pulsado
+            if (rec === 'SEMANAL' && clickedDate) {
+                const d = isoDay(clickedDate);
+                document.querySelectorAll('.' + prefix + '-dia').forEach(cb => {
+                    cb.checked = +cb.value === d;
+                });
+                wrapper.classList.remove('d-none');
+            }
+        }
+
+        ['ev', 'bl'].forEach(p => {
+            document.getElementById(p + '-recurrencia').addEventListener('change',
+                () => actualizarRecUI(p));
+        });
+
+        function recogerDiasSemana(prefix) {
+            return [...document.querySelectorAll('.' + prefix + '-dia:checked')]
+                .map(cb => cb.value).join(',');
+        }
+
+        function resetRecurrenciaUI(prefix) {
+            document.getElementById(prefix + '-recurrencia').value = 'NINGUNA';
+            document.querySelectorAll('.' + prefix + '-dia').forEach(cb => cb.checked = false);
+            document.getElementById(prefix + '-dias-wrapper').classList.add('d-none');
+            document.getElementById(prefix + '-rec-info').classList.add('d-none');
+        }
+
+        /* ══════════════════════════════════════════════════════════════════
+           FULLCALENDAR
+           ══════════════════════════════════════════════════════════════════ */
+        const calendar = new FullCalendar.Calendar(document.getElementById('syncflat-calendar'), {
+            initialView: 'timeGridWeek',
+            locale:      'es',
+            firstDay:    1,
+            height:      'auto',
+            nowIndicator: true,
+            slotMinTime: '06:00:00',
+            slotMaxTime: '23:30:00',
+            allDaySlot:  false,
+            headerToolbar: {
+                left: 'prev,next today', center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            buttonText: { today: 'Hoy', month: 'Mes', week: 'Semana', day: 'Día' },
+
+            events: function (info, successCb, failureCb) {
+                // Pasa el rango visible al feed para filtrar y expandir recurrencias
+                go('/modulos/calendario/feed', 'GET',
+                    { start: info.startStr, end: info.endStr })
+                    .then(resp => {
+                        successCb(resp.data.filter(ev => {
+                            const p = ev.extendedProps;
+                            if (p && p.tipo === 'BLOQUE') return filtrosActivos.has(p.propietarioId);
+                            return true;
+                        }));
+                    })
+                    .catch(err => { console.error('feed error', err); failureCb(err); });
+            },
+
+            dateClick: function (info) {
+                clickedDate = info.date;
+                const start = info.dateStr.length >= 16
+                    ? info.dateStr.substring(0, 16) : info.dateStr + 'T18:00';
+                const endDt = new Date(info.date.getTime() + 60 * 60 * 1000);
+                const end   = endDt.getFullYear() + '-'
+                    + String(endDt.getMonth() + 1).padStart(2, '0') + '-'
+                    + String(endDt.getDate()).padStart(2, '0') + 'T'
+                    + String(endDt.getHours()).padStart(2, '0') + ':'
+                    + String(endDt.getMinutes()).padStart(2, '0');
+
+                ['ev-titulo', 'ev-descripcion', 'bl-descripcion'].forEach(id =>
+                    document.getElementById(id).value = '');
+                document.getElementById('ev-inicio').value = start;
+                document.getElementById('ev-fin').value    = end;
+                document.getElementById('bl-inicio').value = start;
+                document.getElementById('bl-fin').value    = end;
+                document.getElementById('crear-error').classList.add('d-none');
+                resetRecurrenciaUI('ev');
+                resetRecurrenciaUI('bl');
+
+                bootstrap.Tab.getOrCreateInstance(
+                    document.getElementById('tab-btn-evento')).show();
+                tabActual = 'evento';
+                modalCrear.show();
+            },
+
+            eventClick: function (info) {
+                mostrarDetalle(info.event);
+                modalDetalle.show();
+            },
+
+            eventDidMount: function (info) {
+                const p = info.event.extendedProps;
+                if (!p) return;
+                if (p.tipo === 'EVENTO') {
+                    let tip = info.event.title.replace(/^[⏳✅❌] /, '');
+                    if (p.descripcion) tip += '\n' + p.descripcion;
+                    if (p.tipoRecurrencia && p.tipoRecurrencia !== 'NINGUNA') tip += ' 🔁';
+                    info.el.title = tip;
+                } else {
+                    // El título ya incluye nombre + emoji + descripción, solo añadir recurrencia
+                    info.el.title = info.event.title
+                        + (p.tipoRecurrencia && p.tipoRecurrencia !== 'NINGUNA' ? ' 🔁' : '');
+                }
+            }
+        });
+
+        /* ── Filtros ────────────────────────────────────────────────────────── */
+        cbAll.forEach(cb => {
+            cb.addEventListener('change', function () {
+                if (this.checked) filtrosActivos.add(+this.value);
+                else              filtrosActivos.delete(+this.value);
+                this.closest('.form-check').style.opacity = this.checked ? '1' : '0.4';
+                guardarFiltros();
+                calendar.refetchEvents();
             });
         });
+
+        document.getElementById('btn-todos').addEventListener('click', () => {
+            cbAll.forEach(cb => {
+                cb.checked = true;
+                filtrosActivos.add(+cb.value);
+                cb.closest('.form-check').style.opacity = '1';
+            });
+            guardarFiltros();
+            calendar.refetchEvents();
+        });
+        document.getElementById('btn-solo-yo').addEventListener('click', () => {
+            cbAll.forEach(cb => {
+                const yo = +cb.value === usuarioId;
+                cb.checked = yo;
+                yo ? filtrosActivos.add(+cb.value) : filtrosActivos.delete(+cb.value);
+                cb.closest('.form-check').style.opacity = yo ? '1' : '0.4';
+            });
+            guardarFiltros();
+            calendar.refetchEvents();
+        });
+
+        /* ── Guardar evento/bloque desde modal ──────────────────────────────── */
+        document.getElementById('btn-guardar-crear').addEventListener('click', function () {
+            const errorEl = document.getElementById('crear-error');
+            errorEl.classList.add('d-none');
+
+            function onError(err) {
+                try { errorEl.textContent = JSON.parse(err.text)?.message || 'Error al guardar'; }
+                catch { errorEl.textContent = 'Error al guardar'; }
+                errorEl.classList.remove('d-none');
+            }
+
+            if (tabActual === 'evento') {
+                const titulo = document.getElementById('ev-titulo').value.trim();
+                if (!titulo) { errorEl.textContent = 'El título es obligatorio'; errorEl.classList.remove('d-none'); return; }
+                const form = new URLSearchParams();
+                form.append('titulo',          titulo);
+                form.append('descripcion',     document.getElementById('ev-descripcion').value);
+                form.append('fechaInicio',     document.getElementById('ev-inicio').value);
+                form.append('fechaFin',        document.getElementById('ev-fin').value);
+                form.append('tipoRecurrencia', document.getElementById('ev-recurrencia').value);
+                form.append('diasSemana',      recogerDiasSemana('ev'));
+                go('/modulos/calendario/evento/crear', 'POST', form)
+                    .then(() => { modalCrear.hide(); calendar.refetchEvents(); })
+                    .catch(onError);
+            } else {
+                const form = new URLSearchParams();
+                form.append('tipo',            document.getElementById('bl-tipo').value);
+                form.append('descripcion',     document.getElementById('bl-descripcion').value);
+                form.append('inicio',          document.getElementById('bl-inicio').value);
+                form.append('fin',             document.getElementById('bl-fin').value);
+                form.append('tipoRecurrencia', document.getElementById('bl-recurrencia').value);
+                form.append('diasSemana',      recogerDiasSemana('bl'));
+                go('/modulos/calendario/bloque/crear', 'POST', form)
+                    .then(() => { modalCrear.hide(); calendar.refetchEvents(); })
+                    .catch(onError);
+            }
+        });
+
+        /* ══════════════════════════════════════════════════════════════════
+           MODAL DETALLE
+           ══════════════════════════════════════════════════════════════════ */
+        /* ── Paleta de colores por usuario (debe coincidir con CalendarioService.PALETA_BLOQUES) ── */
+        const PALETA_BLOQUES = [
+            "#1d4ed8", "#15803d", "#b91c1c", "#7c3aed",
+            "#0e7490", "#be185d", "#c2410c", "#166534"
+        ];
+        function colorUsuario(id) { return PALETA_BLOQUES[Math.abs(id) % PALETA_BLOQUES.length]; }
+
+        /* Emojis por tipo de bloque (solo para labels en modal/conflictos) */
+        const EMOJI_TIPO_JS = { TRABAJO: '💼', CLASES: '📚', ENTRENAMIENTO: '🏃', OTRO: '📌' };
+
+        const TEXTO_ASIST = { CONFIRMADO: 'Asistiré ✅', RECHAZADO: 'No asistiré ❌', PENDIENTE: 'Pendiente ⏳', SIN_RESPONDER: 'Sin confirmar' };
+        const CLASE_ASIST = { CONFIRMADO: 'btn-success', RECHAZADO: 'btn-outline-danger', PENDIENTE: 'btn-outline-secondary', SIN_RESPONDER: 'btn-outline-secondary' };
+
+        function fmtDt(s) { return s ? s.replace('T', ' ').substring(0, 16) : '—'; }
+
+        function recBadge(p) {
+            if (!p.tipoRecurrencia || p.tipoRecurrencia === 'NINGUNA') return '';
+            const txt = { DIARIA: 'diaria', SEMANAL: 'semanal', MENSUAL: 'mensual', PERSONALIZADA: 'personalizada' };
+            return `<span class="badge bg-secondary ms-1 small">🔁 ${txt[p.tipoRecurrencia] || p.tipoRecurrencia}</span>`;
+        }
+
+        /* Agrupa la lista completa de asistencias en tres bloques visuales */
+        function renderAsistencias(asistencias) {
+            if (!asistencias?.length) return '';
+            const grupos = { CONFIRMADO: [], RECHAZADO: [], pendientes: [] };
+            asistencias.forEach(a => {
+                const nom = a.nombre || ('@' + a.usuario);
+                if (a.estado === 'CONFIRMADO')  grupos.CONFIRMADO.push(nom);
+                else if (a.estado === 'RECHAZADO') grupos.RECHAZADO.push(nom);
+                else grupos.pendientes.push(nom);
+            });
+            let html = '<div class="border-top mt-2 pt-2">';
+            html += '<p class="small fw-semibold mb-1">Asistencia del piso</p>';
+            if (grupos.CONFIRMADO.length)
+                html += `<div class="small mb-1"><span class="text-success fw-semibold">✅ Asistirán:</span> ${grupos.CONFIRMADO.join(', ')}</div>`;
+            if (grupos.RECHAZADO.length)
+                html += `<div class="small mb-1"><span class="text-danger fw-semibold">❌ No asisten:</span> ${grupos.RECHAZADO.join(', ')}</div>`;
+            if (grupos.pendientes.length)
+                html += `<div class="small mb-1"><span class="text-muted fw-semibold">⏳ Sin confirmar:</span> ${grupos.pendientes.join(', ')}</div>`;
+            html += '</div>';
+            return html;
+        }
+
+        function mostrarDetalle(event) {
+            const p        = event.extendedProps;
+            const titulo   = document.getElementById('modal-detalle-titulo');
+            const body     = document.getElementById('modal-detalle-body');
+            const acciones = document.getElementById('modal-detalle-acciones');
+            titulo.innerHTML = event.title.replace(/^[⏳✅❌💼📚🏃⏱] /, '') + recBadge(p);
+            body.innerHTML = acciones.innerHTML = '';
+
+            if (p.tipo === 'EVENTO') {
+                const estadoClass = p.estado === 'APROBADO' ? 'bg-success'
+                                  : p.estado === 'RECHAZADO' ? 'bg-danger' : 'bg-warning text-dark';
+
+                body.innerHTML = `
+                    <span class="badge ${estadoClass} mb-2">${p.estado}</span>
+                    ${p.descripcion ? `<p class="mb-2">${p.descripcion}</p>` : ''}
+                    <p class="text-muted small mb-2">
+                        <strong>Inicio:</strong> ${fmtDt(event.startStr)}<br>
+                        <strong>Fin:</strong> ${fmtDt(event.endStr)}<br>
+                        <strong>Propuesto por:</strong> @${p.creador}
+                        ${p.serieId ? `<br><strong>Serie:</strong> ${p.tipoRecurrencia?.toLowerCase() || ''}` : ''}
+                    </p>
+                    ${renderAsistencias(p.asistencias)}
+                    <div id="conflictos-detalle-panel" class="mt-1"></div>
+                `;
+
+                if (p.estado === 'PROPUESTO') {
+                    acciones.innerHTML = `
+                        <button class="btn btn-sm btn-success" id="d-aprobar">✅ Aprobar</button>
+                        <button class="btn btn-sm btn-outline-danger" id="d-rechazar">❌ Rechazar</button>
+                        <button class="btn btn-sm btn-outline-warning ms-auto" id="d-conflictos">⚠ Ver conflictos</button>`;
+                    document.getElementById('d-aprobar').addEventListener('click', () =>
+                        go('/modulos/calendario/evento/' + p.eventoId + '/aprobar', 'POST')
+                            .then(() => { modalDetalle.hide(); calendar.refetchEvents(); }).catch(console.error));
+                    document.getElementById('d-rechazar').addEventListener('click', () =>
+                        go('/modulos/calendario/evento/' + p.eventoId + '/rechazar', 'POST')
+                            .then(() => { modalDetalle.hide(); calendar.refetchEvents(); }).catch(console.error));
+
+                } else if (p.estado === 'APROBADO') {
+                    const miAsist = p.miAsistencia || 'SIN_RESPONDER';
+                    acciones.innerHTML = `
+                        <button class="btn btn-sm ${CLASE_ASIST[miAsist]}" id="d-asistencia">
+                            ${TEXTO_ASIST[miAsist]}</button>
+                        <button class="btn btn-sm btn-outline-danger" id="d-rechazar">Cancelar evento</button>
+                        <button class="btn btn-sm btn-outline-warning ms-auto" id="d-conflictos">⚠ Ver conflictos</button>`;
+
+                    /* AJAX + reload: garantiza que la lista de asistencias siempre está actualizada */
+                    document.getElementById('d-asistencia').addEventListener('click', function () {
+                        this.disabled = true;
+                        go('/modulos/calendario/asistencia/' + p.eventoId, 'POST')
+                            .then(() => location.reload())
+                            .catch(err => { this.disabled = false; console.error(err); });
+                    });
+                    document.getElementById('d-rechazar').addEventListener('click', () =>
+                        go('/modulos/calendario/evento/' + p.eventoId + '/rechazar', 'POST')
+                            .then(() => { modalDetalle.hide(); calendar.refetchEvents(); }).catch(console.error));
+
+                } else {
+                    acciones.innerHTML = `
+                        <button class="btn btn-sm btn-outline-secondary" id="d-reabrir">↩ Reabrir propuesta</button>`;
+                    document.getElementById('d-reabrir').addEventListener('click', () =>
+                        go('/modulos/calendario/evento/' + p.eventoId + '/reabrir', 'POST')
+                            .then(() => { modalDetalle.hide(); calendar.refetchEvents(); }).catch(console.error));
+                }
+
+                const btnConf = document.getElementById('d-conflictos');
+                if (btnConf) {
+                    btnConf.addEventListener('click', function () {
+                        this.disabled = true; this.textContent = '…';
+                        go('/modulos/calendario/conflictos/' + p.eventoId, 'GET')
+                            .then(resp => {
+                                const panel = document.getElementById('conflictos-detalle-panel');
+                                this.style.display = 'none';
+                                if (!resp.data.length) {
+                                    panel.innerHTML = '<span class="badge bg-success">✓ Sin conflictos</span>';
+                                } else {
+                                    let html = '<div class="small fw-semibold text-danger mb-1">⚠ Conflictos detectados</div>';
+                                    resp.data.forEach(c => {
+                                        const col   = colorUsuario(c.usuarioId);
+                                        const emoji = EMOJI_TIPO_JS[c.tipo] || '📌';
+                                        html += `<div class="ps-2 mb-1 small" style="border-left:3px solid ${col}">
+                                            <strong style="color:${col}">${c.nombre || ('@' + c.usuario)}</strong>
+                                            <span class="badge text-white ms-1" style="background:${col}">${emoji} ${c.tipo}</span>
+                                            ${c.descripcion ? ' ' + c.descripcion : ''}
+                                            <span class="text-muted">(${c.inicio.substring(11,16)}–${c.fin.substring(11,16)})</span>
+                                        </div>`;
+                                    });
+                                    panel.innerHTML = html;
+                                }
+                            })
+                            .catch(() => { this.disabled = false; this.textContent = '⚠ Ver conflictos'; });
+                    });
+                }
+
+            } else { // BLOQUE
+                const col     = p.color || colorUsuario(p.propietarioId);
+                const emoji   = EMOJI_TIPO_JS[p.tipoBloque] || '📌';
+                const tipoBadge = `<span class="badge text-white ms-1" style="background:${col}">${emoji} ${p.tipoBloque}</span>`;
+                const recBadgeBloque = p.tipoRecurrencia && p.tipoRecurrencia !== 'NINGUNA'
+                    ? `<span class="badge bg-secondary ms-1">🔁 ${p.tipoRecurrencia.toLowerCase()}</span>` : '';
+                body.innerHTML = `
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span style="width:14px;height:14px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span>
+                        <strong>${p.nombrePropietario || ('@' + p.propietario)}</strong>
+                        ${tipoBadge}${recBadgeBloque}
+                    </div>
+                    ${p.descripcion ? `<p class="mb-2 text-secondary">${p.descripcion}</p>` : ''}
+                    <p class="text-muted small mb-0">
+                        <strong>Inicio:</strong> ${fmtDt(event.startStr)}<br>
+                        <strong>Fin:</strong> ${fmtDt(event.endStr)}
+                    </p>`;
+                if (p.esMio) {
+                    acciones.innerHTML = `<button class="btn btn-sm btn-outline-danger" id="d-eliminar">
+                        Eliminar ${p.tipoRecurrencia && p.tipoRecurrencia !== 'NINGUNA' ? 'serie de bloques' : 'bloque'}
+                    </button>`;
+                    document.getElementById('d-eliminar').addEventListener('click', () =>
+                        go('/modulos/calendario/bloque/' + p.bloqueId, 'DELETE')
+                            .then(() => { modalDetalle.hide(); calendar.refetchEvents(); }).catch(console.error));
+                } else {
+                    acciones.innerHTML = '<span class="text-muted small">Bloque de otro miembro.</span>';
+                }
+            }
+        }
+
+        calendar.render();
+
+        /* ── Colorizar filtros con el color de cada usuario ──────────────────── */
+        const leyenda = document.getElementById('leyenda-usuarios');
+        cbAll.forEach(cb => {
+            const uid   = +cb.value;
+            const col   = colorUsuario(uid);
+            const label = cb.closest('.form-check').querySelector('label');
+            // Punto de color antes del nombre
+            const dot = document.createElement('span');
+            dot.style.cssText =
+                `display:inline-block;width:10px;height:10px;border-radius:50%;` +
+                `background:${col};margin-right:5px;flex-shrink:0;vertical-align:middle`;
+            label.prepend(dot);
+            // Entrada en leyenda
+            if (leyenda) {
+                const entry = document.createElement('div');
+                entry.className = 'd-flex align-items-center gap-2 mb-1';
+                entry.innerHTML =
+                    `<span class="filtro-dot" style="background:${col}"></span>` +
+                    `<span>${label.textContent.trim()}</span>`;
+                leyenda.appendChild(entry);
+            }
+        });
+
+        /* ── Dinámico: descripción obligatoria para tipo OTRO ────────────────── */
+        const blTipo    = document.getElementById('bl-tipo');
+        const blDesc    = document.getElementById('bl-descripcion');
+        const blLabel   = document.getElementById('bl-desc-label');
+        const blHint    = document.getElementById('bl-desc-hint');
+
+        function actualizarDescBloque() {
+            if (blTipo.value === 'OTRO') {
+                blLabel.textContent = 'Nombre del bloque *';
+                blLabel.classList.add('text-primary');
+                blDesc.placeholder = 'Ej: Médico, Cena familiar, Tutoría, Viaje…';
+                blDesc.required    = true;
+                blHint.classList.remove('d-none');
+            } else {
+                blLabel.textContent = 'Descripción';
+                blLabel.classList.remove('text-primary');
+                blDesc.placeholder = 'Ej: Trabajo en remoto';
+                blDesc.required    = false;
+                blHint.classList.add('d-none');
+            }
+        }
+        blTipo.addEventListener('change', actualizarDescBloque);
+
+    }); // DOMContentLoaded
     </script>
 </body>
 

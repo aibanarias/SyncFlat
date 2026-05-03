@@ -10,8 +10,21 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+/**
+ * Notificación interna asociada a un piso.
+ * <p>
+ * Las alertas informan a los miembros de eventos relevantes
+ * (p. ej. gasto añadido, tarea vencida). El campo {@code leida} indica
+ * si el destinatario ya la ha visto.
+ */
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 public class Alerta {
 
     @Id
@@ -29,55 +42,4 @@ public class Alerta {
     private TipoAlerta tipo;
 
     private boolean leida;
-
-    public Alerta() {
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public Piso getPiso() {
-        return piso;
-    }
-
-    public void setPiso(Piso piso) {
-        this.piso = piso;
-    }
-
-    public String getMensaje() {
-        return mensaje;
-    }
-
-    public void setMensaje(String mensaje) {
-        this.mensaje = mensaje;
-    }
-
-    public LocalDateTime getFecha() {
-        return fecha;
-    }
-
-    public void setFecha(LocalDateTime fecha) {
-        this.fecha = fecha;
-    }
-
-    public TipoAlerta getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(TipoAlerta tipo) {
-        this.tipo = tipo;
-    }
-
-    public boolean isLeida() {
-        return leida;
-    }
-
-    public void setLeida(boolean leida) {
-        this.leida = leida;
-    }
 }

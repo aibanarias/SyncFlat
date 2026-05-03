@@ -15,12 +15,20 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
- * A group of users, with an associated chat.
+ * Grupo de usuarios con un chat asociado.
+ * <p>
+ * Se usa {@code @Getter}/{@code @Setter} en lugar de {@code @Data} para evitar que
+ * Lombok genere {@code equals()}/{@code hashCode()} sobre las colecciones lazy
+ * {@code members} y {@code messages}.
  */
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @NamedQueries({
   @NamedQuery(name = "Topic.byKey", query = "SELECT t FROM Topic t "
@@ -36,7 +44,7 @@ public class Topic {
   @ManyToMany
   private List<User> members = new ArrayList<>();
   private String name;
-  @Column(nullable = false, unique = true, name="topic_key") // key is reserved
+  @Column(nullable = false, unique = true, name="topic_key") // key es palabra reservada en H2
   private String key;
 
   @OneToMany

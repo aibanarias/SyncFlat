@@ -12,19 +12,21 @@
     <main class="flex-shrink-0">
         <div class="container mt-4">
             <h1 class="mb-4">Tareas</h1>
+            <th:block th:replace="~{fragments/alerts :: alerts}"/>
 
             <!-- Sin piso -->
             <th:block th:unless="${piso}">
                 <div class="alert alert-info">
                     Inicia sesión para gestionar las tareas de tu piso.
                 </div>
-                <p>Módulo para organizar y repartir las tareas domésticas del piso.</p>
             </th:block>
 
             <!-- Con piso -->
             <th:block th:if="${piso}">
 
-                <!-- Formulario crear tarea -->
+                <!-- ============================================================
+                     Formulario crear tarea
+                     ============================================================ -->
                 <div class="card mb-4">
                     <div class="card-header">Crear nueva tarea</div>
                     <div class="card-body">
@@ -46,10 +48,14 @@
                                     <option value="RECURRENTE">Recurrente</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-2" id="grupoFrecuencia" style="display:none">
                                 <label for="frecuencia" class="form-label">Frecuencia</label>
-                                <input type="text" class="form-control" id="frecuencia" name="frecuencia"
-                                    placeholder="Ej: SEMANAL">
+                                <select class="form-select" id="frecuencia" name="frecuencia">
+                                    <option value="DIARIA">Diaria</option>
+                                    <option value="SEMANAL" selected>Semanal</option>
+                                    <option value="QUINCENAL">Quincenal</option>
+                                    <option value="MENSUAL">Mensual</option>
+                                </select>
                             </div>
                             <div class="col-md-3">
                                 <label for="fechaLimite" class="form-label">Fecha límite</label>
@@ -70,8 +76,14 @@
                     </div>
                 </div>
 
-                <!-- Tareas por realizar -->
-                <h3 class="mt-4">Tareas por realizar</h3>
+                <!-- ============================================================
+                     SECCIÓN 1 — PENDIENTES
+                     ============================================================ -->
+                <h3 class="mt-4 d-flex align-items-center gap-2">
+                    Tareas por hacer
+                    <span class="badge bg-secondary"
+                          th:text="${#lists.size(pendientes) + #lists.size(sinAsignar)}">0</span>
+                </h3>
 
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
@@ -93,8 +105,11 @@
                                 </td>
                                 <td>
                                     <span class="badge"
-                                        th:classappend="${at.tarea.tipo.name() == 'RECURRENTE'} ? 'bg-info text-dark' : 'bg-secondary'"
-                                        th:text="${at.tarea.tipo}">Tipo</span>
+                                        th:classappend="${at.tarea.tipo.name() == 'RECURRENTE'} ? 'bg-info text-dark' : 'bg-secondary'">
+                                        <span th:text="${at.tarea.tipo}">Tipo</span>
+                                        <span th:if="${at.tarea.frecuencia != null}"
+                                              th:text="${' · ' + at.tarea.frecuencia.name().toLowerCase()}"></span>
+                                    </span>
                                 </td>
                                 <td th:text="${at.usuario.firstName + ' ' + at.usuario.lastName}">Miembro</td>
                                 <td th:text="${at.fechaAsignacion}">fecha</td>
@@ -111,6 +126,17 @@
                                     </button>
                                 </td>
                             </tr>
+                            <!-- Tareas sin responsable asignado -->
+                            <tr th:if="${not #lists.isEmpty(sinAsignar)}">
+                                <td colspan="6" class="p-0">
+                                    <div class="px-3 py-2 bg-light border-top">
+                                        <small class="text-muted fw-semibold">Sin responsable asignado:</small>
+                                        <span th:each="t, i : ${sinAsignar}" class="ms-2">
+                                            <span class="badge bg-light text-dark border" th:text="${t.nombre}">tarea</span>
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
                             <tr th:if="${#lists.isEmpty(pendientes) and #lists.isEmpty(sinAsignar)}">
                                 <td colspan="6" class="text-muted text-center">No hay tareas pendientes.</td>
                             </tr>
@@ -118,28 +144,82 @@
                     </table>
                 </div>
 
-                <!-- Tareas sin asignar (creadas pero sin responsable) -->
-                <div th:if="${not #lists.isEmpty(sinAsignar)}" class="mb-4">
-                    <h6 class="text-muted">Sin responsable asignado</h6>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between align-items-center"
-                            th:each="t : ${sinAsignar}">
-                            <div>
-                                <strong th:text="${t.nombre}">Tarea</strong>
-                                <span class="text-muted ms-2 small" th:text="${t.descripcion}">desc</span>
-                            </div>
-                            <div class="text-end">
-                                <span class="badge"
-                                    th:classappend="${t.tipo.name() == 'RECURRENTE'} ? 'bg-info text-dark' : 'bg-secondary'"
-                                    th:text="${t.tipo}">Tipo</span>
-                                <span class="ms-2 small text-muted">Límite: <span th:text="${t.fechaLimite}">fecha</span></span>
-                            </div>
-                        </li>
-                    </ul>
+                <!-- ============================================================
+                     SECCIÓN 2 — COMPLETADAS, PENDIENTES DE VALIDAR
+                     ============================================================ -->
+                <h3 class="mt-5 d-flex align-items-center gap-2">
+                    Realizadas — pendientes de validar
+                    <span class="badge bg-warning text-dark"
+                          th:text="${#lists.size(pendientesDeValidar)}">0</span>
+                </h3>
+                <p class="text-muted small mb-2">
+                    Una persona distinta del responsable debe confirmar que la tarea se hizo correctamente.
+                </p>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-warning">
+                            <tr>
+                                <th>Tarea</th>
+                                <th>Tipo</th>
+                                <th>Responsable</th>
+                                <th>Completada el</th>
+                                <th>Fecha límite</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="at : ${pendientesDeValidar}">
+                                <td>
+                                    <strong th:text="${at.tarea.nombre}">Tarea</strong>
+                                    <div class="text-muted small" th:text="${at.tarea.descripcion}">desc</div>
+                                </td>
+                                <td>
+                                    <span class="badge"
+                                        th:classappend="${at.tarea.tipo.name() == 'RECURRENTE'} ? 'bg-info text-dark' : 'bg-secondary'">
+                                        <span th:text="${at.tarea.tipo}">Tipo</span>
+                                        <span th:if="${at.tarea.frecuencia != null}"
+                                              th:text="${' · ' + at.tarea.frecuencia.name().toLowerCase()}"></span>
+                                    </span>
+                                </td>
+                                <td th:text="${at.usuario.firstName + ' ' + at.usuario.lastName}">Miembro</td>
+                                <td>
+                                    <span class="badge bg-success" th:text="${at.fechaCompletada}">fecha</span>
+                                </td>
+                                <td th:text="${at.tarea.fechaLimite}">fecha</td>
+                                <td class="d-flex gap-1 flex-wrap">
+                                    <!-- Reabrir: cualquier miembro puede reabrir mientras no esté validada -->
+                                    <button class="btn btn-sm btn-outline-secondary completar-tarea"
+                                            th:data-id="${at.id}">
+                                        Reabrir
+                                    </button>
+                                    <!-- Validar: solo quien NO sea el asignado -->
+                                    <button th:if="${at.usuario.id != usuarioActualId}"
+                                            class="btn btn-sm btn-primary validar-tarea"
+                                            th:data-id="${at.id}">
+                                        Validar
+                                    </button>
+                                    <span th:unless="${at.usuario.id != usuarioActualId}"
+                                          class="text-muted small align-self-center"
+                                          title="No puedes validar tu propia tarea">
+                                        (tú la realizaste)
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(pendientesDeValidar)}">
+                                <td colspan="6" class="text-muted text-center">No hay tareas pendientes de validar.</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
-                <!-- Tareas realizadas -->
-                <h3 class="mt-5">Tareas realizadas</h3>
+                <!-- ============================================================
+                     SECCIÓN 3 — VALIDADAS
+                     ============================================================ -->
+                <h3 class="mt-5 d-flex align-items-center gap-2">
+                    Validadas
+                    <span class="badge bg-success" th:text="${#lists.size(validadas)}">0</span>
+                </h3>
 
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
@@ -147,37 +227,37 @@
                             <tr>
                                 <th>Tarea</th>
                                 <th>Tipo</th>
-                                <th>Asignada a</th>
+                                <th>Responsable</th>
                                 <th>Completada el</th>
-                                <th>Fecha límite</th>
-                                <th></th>
+                                <th>Validada por</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr th:each="at : ${realizadas}" class="text-muted">
+                            <tr th:each="at : ${validadas}" class="text-muted">
                                 <td>
                                     <span th:text="${at.tarea.nombre}">Tarea</span>
                                     <div class="small" th:text="${at.tarea.descripcion}">desc</div>
                                 </td>
                                 <td>
                                     <span class="badge"
-                                        th:classappend="${at.tarea.tipo.name() == 'RECURRENTE'} ? 'bg-info text-dark' : 'bg-secondary'"
-                                        th:text="${at.tarea.tipo}">Tipo</span>
+                                        th:classappend="${at.tarea.tipo.name() == 'RECURRENTE'} ? 'bg-info text-dark' : 'bg-secondary'">
+                                        <span th:text="${at.tarea.tipo}">Tipo</span>
+                                        <span th:if="${at.tarea.frecuencia != null}"
+                                              th:text="${' · ' + at.tarea.frecuencia.name().toLowerCase()}"></span>
+                                    </span>
                                 </td>
                                 <td th:text="${at.usuario.firstName + ' ' + at.usuario.lastName}">Miembro</td>
                                 <td>
                                     <span class="badge bg-success" th:text="${at.fechaCompletada}">fecha</span>
                                 </td>
-                                <td th:text="${at.tarea.fechaLimite}">fecha</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-secondary completar-tarea"
-                                        th:data-id="${at.id}">
-                                        Reabrir
-                                    </button>
+                                    <span class="badge bg-primary"
+                                          th:if="${at.validador != null}"
+                                          th:text="${at.validador.username}">validador</span>
                                 </td>
                             </tr>
-                            <tr th:if="${#lists.isEmpty(realizadas)}">
-                                <td colspan="6" class="text-muted text-center">Todavía no hay tareas completadas.</td>
+                            <tr th:if="${#lists.isEmpty(validadas)}">
+                                <td colspan="5" class="text-muted text-center">Todavía no hay tareas validadas.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -193,25 +273,48 @@
 
     <th:block th:replace="~{fragments/footer.html :: footer}" />
 
-    <!-- AJAX completar / reabrir tarea (usa go() de iw.js) -->
     <script th:if="${piso}">
+        // ── Mostrar/ocultar frecuencia según tipo ────────────────────────────
+        (function () {
+            var tipoSel = document.getElementById('tipo');
+            var grupoFrq = document.getElementById('grupoFrecuencia');
+            var frecSel = document.getElementById('frecuencia');
+            function actualizarFrecuencia() {
+                var esRecurrente = tipoSel.value === 'RECURRENTE';
+                grupoFrq.style.display = esRecurrente ? '' : 'none';
+                frecSel.required = esRecurrente;
+            }
+            tipoSel.addEventListener('change', actualizarFrecuencia);
+            actualizarFrecuencia();
+        })();
+
+        // ── Utilidad: muestra el mensaje de error de un ApiResponse rechazado ──
+        function mostrarError(resp) {
+            try {
+                var err = JSON.parse(resp.text);
+                alert(err.message || 'Error al procesar la petición');
+            } catch (e) {
+                alert('Error al procesar la petición');
+            }
+        }
+
+        // ── Completar / Reabrir ──────────────────────────────────────────────
         document.querySelectorAll('.completar-tarea').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var id = this.getAttribute('data-id');
-                var button = this;
-
                 go('/modulos/tareas/' + id + '/completar', 'POST')
-                    .then(function (data) {
-                        if (data.completada) {
-                            button.textContent = 'Reabrir';
-                            button.className = 'btn btn-sm btn-outline-secondary completar-tarea';
-                            button.closest('tr').classList.add('text-muted');
-                        } else {
-                            button.textContent = 'Marcar como hecha';
-                            button.className = 'btn btn-sm btn-outline-success completar-tarea';
-                            button.closest('tr').classList.remove('text-muted');
-                        }
-                    });
+                    .then(function () { window.location.reload(); })
+                    .catch(mostrarError);
+            });
+        });
+
+        // ── Validar ──────────────────────────────────────────────────────────
+        document.querySelectorAll('.validar-tarea').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = this.getAttribute('data-id');
+                go('/modulos/tareas/' + id + '/validar', 'POST')
+                    .then(function () { window.location.reload(); })
+                    .catch(mostrarError);
             });
         });
     </script>

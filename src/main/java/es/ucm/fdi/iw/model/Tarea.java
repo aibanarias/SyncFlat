@@ -10,6 +10,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Tarea doméstica definida en el contexto de un piso.
@@ -18,6 +21,9 @@ import jakarta.persistence.ManyToOne;
  * asigna a uno o varios miembros mediante {@link AsignacionTarea}.
  */
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 public class Tarea {
 
     @Id
@@ -30,69 +36,11 @@ public class Tarea {
     @Enumerated(EnumType.STRING)
     private TipoTarea tipo;
 
-    private String frecuencia;
+    @Enumerated(EnumType.STRING)
+    private FrecuenciaTarea frecuencia;
     private LocalDate fechaLimite;
 
     @ManyToOne
     @JoinColumn(name = "piso_id")
     private Piso piso;
-
-    public Tarea() {
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public String getDescripcion() {
-        return descripcion;
-    }
-
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
-
-    public TipoTarea getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(TipoTarea tipo) {
-        this.tipo = tipo;
-    }
-
-    public String getFrecuencia() {
-        return frecuencia;
-    }
-
-    public void setFrecuencia(String frecuencia) {
-        this.frecuencia = frecuencia;
-    }
-
-    public LocalDate getFechaLimite() {
-        return fechaLimite;
-    }
-
-    public void setFechaLimite(LocalDate fechaLimite) {
-        this.fechaLimite = fechaLimite;
-    }
-
-    public Piso getPiso() {
-        return piso;
-    }
-
-    public void setPiso(Piso piso) {
-        this.piso = piso;
-    }
 }

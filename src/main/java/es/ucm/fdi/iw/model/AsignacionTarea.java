@@ -8,6 +8,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Asignación de una tarea a un usuario concreto.
@@ -17,6 +20,9 @@ import jakarta.persistence.ManyToOne;
  * que otro miembro del piso confirme la realización.
  */
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 public class AsignacionTarea {
 
     @Id
@@ -38,63 +44,4 @@ public class AsignacionTarea {
     @ManyToOne
     @JoinColumn(name = "validador_id")
     private User validador;
-
-    public AsignacionTarea() {
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public Tarea getTarea() {
-        return tarea;
-    }
-
-    public void setTarea(Tarea tarea) {
-        this.tarea = tarea;
-    }
-
-    public User getUsuario() {
-        return usuario;
-    }
-
-    public void setUsuario(User usuario) {
-        this.usuario = usuario;
-    }
-
-    public LocalDate getFechaAsignacion() {
-        return fechaAsignacion;
-    }
-
-    public void setFechaAsignacion(LocalDate fechaAsignacion) {
-        this.fechaAsignacion = fechaAsignacion;
-    }
-
-    public LocalDate getFechaCompletada() {
-        return fechaCompletada;
-    }
-
-    public void setFechaCompletada(LocalDate fechaCompletada) {
-        this.fechaCompletada = fechaCompletada;
-    }
-
-    public boolean isValidada() {
-        return validada;
-    }
-
-    public void setValidada(boolean validada) {
-        this.validada = validada;
-    }
-
-    public User getValidador() {
-        return validador;
-    }
-
-    public void setValidador(User validador) {
-        this.validador = validador;
-    }
 }

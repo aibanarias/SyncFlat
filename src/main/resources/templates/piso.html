@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html class="h-100" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <th:block th:replace="~{fragments/head :: header}" />
+    <title>Mi piso - SyncFlat</title>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <header th:replace="~{fragments/nav.html :: nav}"></header>
+
+    <main class="flex-shrink-0">
+        <div class="container mt-5" style="max-width: 700px;">
+
+            <h1 class="mb-2">Bienvenido a SyncFlat</h1>
+            <p class="text-muted mb-4">Todavía no perteneces a ningún piso. Crea uno nuevo o únete al de un compañero.</p>
+
+            <th:block th:replace="~{fragments/alerts :: alerts}" />
+
+            <div class="row g-4">
+
+                <!-- ========================================================
+                     Crear un piso nuevo
+                     ======================================================== -->
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <strong>Crear un piso</strong>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text text-muted small">
+                                Se generará un código de invitación único que podrás compartir con tus compañeros.
+                            </p>
+                            <form th:action="@{/modulos/piso/crear}" method="post">
+                                <div class="mb-3">
+                                    <label for="nombre" class="form-label">Nombre del piso</label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre"
+                                           placeholder="Ej: Piso de Malasaña" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="direccion" class="form-label">Dirección</label>
+                                    <input type="text" class="form-control" id="direccion" name="direccion"
+                                           placeholder="Ej: Calle Fuencarral 42, 2B" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Crear piso</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========================================================
+                     Unirse a un piso existente
+                     ======================================================== -->
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <strong>Unirse a un piso</strong>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text text-muted small">
+                                Pide el código de invitación al propietario o a uno de tus compañeros.
+                            </p>
+                            <form th:action="@{/modulos/piso/unirse}" method="post">
+                                <div class="mb-3">
+                                    <label for="codigo" class="form-label">Código de invitación</label>
+                                    <input type="text" class="form-control font-monospace text-uppercase"
+                                           id="codigo" name="codigo"
+                                           placeholder="Ej: MONC01" maxlength="10"
+                                           style="letter-spacing: 0.2em;" required>
+                                    <div class="form-text">El código tiene 6 caracteres (mayúsculas y números).</div>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">Unirse al piso</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <th:block th:replace="~{fragments/footer.html :: footer}" />
+</body>
+
+</html>

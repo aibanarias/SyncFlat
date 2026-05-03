@@ -1,9 +1,9 @@
 package es.ucm.fdi.iw.model;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import jakarta.persistence.*;
 
@@ -18,11 +18,15 @@ import java.util.List;
  * para simplificar la persistencia. La tabla se llama {@code IWUser} para evitar
  * conflictos con la palabra reservada {@code USER} en H2.
  * <p>
- * Implementa {@link Transferable} para poder serializar a JSON sin exponer
- * el hash de la contraseña.
+ * Implementa {@link Transferable} para serializar a JSON sin exponer el hash de la contraseña.
+ * <p>
+ * Se usa {@code @Getter}/{@code @Setter} en lugar de {@code @Data} para evitar que Lombok
+ * genere {@code equals()}/{@code hashCode()} sobre las colecciones lazy ({@code sent},
+ * {@code received}, {@code groups}), lo que causaría {@code LazyInitializationException}.
  */
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @NamedQueries({
     @NamedQuery(name = "User.byUsername", query = "SELECT u FROM User u "
@@ -54,8 +58,6 @@ public class User implements Transferable<User.Transfer> {
 
   private String firstName;
   private String lastName;
-
-  private String colorFavorito;
 
   private boolean enabled;
   private String roles; // roles separados por coma, ej: "USER" o "USER,ADMIN"
@@ -95,7 +97,7 @@ public class User implements Transferable<User.Transfer> {
     StringBuilder gs = new StringBuilder();
     for (Topic g : groups) {
       gs.append(g.getName()).append(", ");
-    } 
+    }
     return new Transfer(id, username, received.size(), sent.size(), gs.toString());
   }
 

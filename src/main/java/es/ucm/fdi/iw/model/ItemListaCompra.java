@@ -6,8 +6,21 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+/**
+ * Ítem de una lista de la compra.
+ * <p>
+ * Relaciona un {@link Producto} con una {@link ListaCompra} indicando la
+ * cantidad solicitada y si ya ha sido comprado. El campo {@code solicitadoPor}
+ * identifica al miembro que añadió el ítem.
+ */
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 public class ItemListaCompra {
 
     @Id
@@ -28,55 +41,4 @@ public class ItemListaCompra {
     @ManyToOne
     @JoinColumn(name = "solicitado_por_id")
     private User solicitadoPor;
-
-    public ItemListaCompra() {
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public ListaCompra getLista() {
-        return lista;
-    }
-
-    public void setLista(ListaCompra lista) {
-        this.lista = lista;
-    }
-
-    public Producto getProducto() {
-        return producto;
-    }
-
-    public void setProducto(Producto producto) {
-        this.producto = producto;
-    }
-
-    public int getCantidad() {
-        return cantidad;
-    }
-
-    public void setCantidad(int cantidad) {
-        this.cantidad = cantidad;
-    }
-
-    public boolean isComprado() {
-        return comprado;
-    }
-
-    public void setComprado(boolean comprado) {
-        this.comprado = comprado;
-    }
-
-    public User getSolicitadoPor() {
-        return solicitadoPor;
-    }
-
-    public void setSolicitadoPor(User solicitadoPor) {
-        this.solicitadoPor = solicitadoPor;
-    }
 }

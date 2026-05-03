@@ -14,52 +14,64 @@
             <div class="d-flex align-items-center justify-content-between mb-4">
                 <h1 class="mb-0">Lista de la compra</h1>
                 <a th:if="${piso}" th:href="@{/modulos/compra/gestion}"
-                    class="btn btn-outline-secondary btn-sm">Gestionar listas y catálogo →</a>
+                   class="btn btn-outline-secondary btn-sm">Gestionar listas y catálogo →</a>
             </div>
+
+            <th:block th:replace="~{fragments/alerts :: alerts}"/>
 
             <!-- Sin piso -->
             <th:block th:unless="${piso}">
                 <div class="alert alert-info">
                     Inicia sesión para gestionar la lista de la compra de tu piso.
                 </div>
-                <p>Módulo para organizar las compras compartidas del hogar.</p>
             </th:block>
 
             <!-- Con piso -->
             <th:block th:if="${piso}">
 
-                <!-- Aviso si no hay listas o productos -->
+                <!-- ============================================================
+                     Aviso cuando no hay listas activas ni productos
+                     ============================================================ -->
                 <div class="alert alert-info"
-                    th:if="${#lists.isEmpty(listas) or #lists.isEmpty(productos)}">
-                    Antes de añadir ítems necesitas
-                    <th:block th:if="${#lists.isEmpty(listas)}">al menos una lista</th:block>
-                    <th:block th:if="${not #lists.isEmpty(listas) and #lists.isEmpty(productos)}">al menos un producto en el catálogo</th:block>.
-                    <a th:href="@{/modulos/compra/gestion}" class="alert-link">Ir a gestión →</a>
+                    th:if="${#lists.isEmpty(listasActivas) or #lists.isEmpty(productos)}">
+                    <th:block th:if="${#lists.isEmpty(listasActivas)}">
+                        No hay listas activas.
+                        <a th:href="@{/modulos/compra/gestion}" class="alert-link">Crea una nueva lista →</a>
+                    </th:block>
+                    <th:block th:if="${not #lists.isEmpty(listasActivas) and #lists.isEmpty(productos)}">
+                        El catálogo de productos está vacío.
+                        <a th:href="@{/modulos/compra/gestion}" class="alert-link">Añade productos →</a>
+                    </th:block>
                 </div>
 
-                <!-- Formulario añadir item (solo si hay listas y productos) -->
-                <div class="card mb-4" th:if="${not #lists.isEmpty(listas) and not #lists.isEmpty(productos)}">
-                    <div class="card-header">Añadir producto a la lista</div>
+                <!-- ============================================================
+                     Formulario añadir ítem (solo si hay listas activas y productos)
+                     ============================================================ -->
+                <div class="card mb-4"
+                    th:if="${not #lists.isEmpty(listasActivas) and not #lists.isEmpty(productos)}">
+                    <div class="card-header fw-semibold">Añadir producto a una lista</div>
                     <div class="card-body">
                         <form th:action="@{/modulos/compra/item}" method="post" class="row g-3">
                             <div class="col-md-3">
                                 <label for="listaId" class="form-label">Lista</label>
                                 <select class="form-select" id="listaId" name="listaId" required>
-                                    <option th:each="l : ${listas}" th:value="${l.id}" th:text="${l.nombre}">Lista
-                                    </option>
+                                    <option th:each="l : ${listasActivas}"
+                                            th:value="${l.id}"
+                                            th:text="${l.nombre}">Lista</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
                                 <label for="productoId" class="form-label">Producto</label>
                                 <select class="form-select" id="productoId" name="productoId" required>
-                                    <option th:each="p : ${productos}" th:value="${p.id}" th:text="${p.nombre}">Producto
-                                    </option>
+                                    <option th:each="p : ${productos}"
+                                            th:value="${p.id}"
+                                            th:text="${p.nombre}">Producto</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
                                 <label for="cantidad" class="form-label">Cantidad</label>
-                                <input type="number" class="form-control" id="cantidad" name="cantidad" value="1"
-                                    min="1" required>
+                                <input type="number" class="form-control" id="cantidad"
+                                    name="cantidad" value="1" min="1" required>
                             </div>
                             <div class="col-md-4 d-flex align-items-end">
                                 <button type="submit" class="btn btn-primary w-100">Añadir</button>
@@ -68,51 +80,259 @@
                     </div>
                 </div>
 
-                <!-- Listas activas -->
-                <div th:each="lista : ${listas}" class="mb-4">
-                    <h3>
-                        <span th:text="${lista.nombre}">Lista</span>
-                        <small class="text-muted" th:text="${lista.fechaCreacion}">fecha</small>
-                        <span class="badge bg-success" th:if="${lista.completada}">Completada</span>
-                    </h3>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Estado</th>
-                                <th>Producto</th>
-                                <th>Categoría</th>
-                                <th>Cantidad</th>
-                                <th>Solicitado por</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="item : ${items}" th:if="${item.lista.id == lista.id}">
-                                <td>
-                                    <button class="btn btn-sm toggle-compra"
-                                        th:classappend="${item.comprado} ? 'btn-success' : 'btn-outline-secondary'"
-                                        th:data-id="${item.id}" th:text="${item.comprado} ? '✓' : '○'">○</button>
-                                </td>
-                                <td th:text="${item.producto.nombre}"
-                                    th:classappend="${item.comprado} ? 'text-decoration-line-through text-muted' : ''">
-                                    Producto</td>
-                                <td th:text="${item.producto.categoria}">Cat</td>
-                                <td th:text="${item.cantidad}">1</td>
-                                <td th:text="${item.solicitadoPor.username}">usr</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </th:block>
+                <!-- ============================================================
+                     SECCIÓN 1 — LISTAS ACTIVAS
+                     ============================================================ -->
+                <h3 class="mt-2 d-flex align-items-center gap-2">
+                    Listas activas
+                    <span class="badge bg-primary" th:text="${#lists.size(listasActivas)}">0</span>
+                </h3>
 
-            <p class="mt-4">
-                <a th:href="@{/}">← Volver al inicio</a>
-            </p>
+                <th:block th:each="lista : ${listasActivas}">
+                    <div class="card mb-4 border-primary">
+                        <div class="card-header d-flex align-items-center justify-content-between">
+                            <span>
+                                <strong th:text="${lista.nombre}">Lista</strong>
+                                <small class="text-muted ms-2" th:text="${lista.fechaCreacion}">fecha</small>
+                            </span>
+                            <span>
+                                <!-- Participantes de la lista -->
+                                <span th:if="${#lists.isEmpty(lista.participantes)}"
+                                      class="badge bg-secondary me-1">Todos los miembros</span>
+                                <span th:each="p : ${lista.participantes}"
+                                      class="badge bg-info text-dark me-1"
+                                      th:text="${p.firstName}">Ana</span>
+                                <span class="badge bg-primary ms-1">Activa</span>
+                            </span>
+                        </div>
+
+                        <!-- Ítems de esta lista -->
+                        <div class="card-body p-0"
+                             th:with="listaItems=${items.?[lista.id == __${lista.id}__]}">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width:3rem"></th>
+                                        <th>Producto</th>
+                                        <th>Categoría</th>
+                                        <th>Cantidad</th>
+                                        <th>Pedido por</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="item : ${listaItems}">
+                                        <td>
+                                            <button class="btn btn-sm toggle-compra"
+                                                th:classappend="${item.comprado} ? 'btn-success' : 'btn-outline-secondary'"
+                                                th:data-id="${item.id}"
+                                                th:text="${item.comprado} ? '✓' : '○'">○</button>
+                                        </td>
+                                        <td th:text="${item.producto.nombre}"
+                                            th:classappend="${item.comprado} ? 'text-decoration-line-through text-muted' : ''">
+                                            Producto</td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border"
+                                                  th:text="${item.producto.categoria}">Cat</span>
+                                        </td>
+                                        <td th:text="${item.cantidad}">1</td>
+                                        <td th:text="${item.solicitadoPor.username}">usr</td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(listaItems)}">
+                                        <td colspan="5" class="text-muted text-center py-2">
+                                            Sin ítems todavía. Añade productos usando el formulario de arriba.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Formulario registrar / cerrar compra -->
+                        <div class="card-footer bg-light">
+                            <p class="mb-2 fw-semibold small text-muted">
+                                Cerrar compra: solo los ítems marcados (✓) cuentan en el gasto final
+                            </p>
+                            <form th:action="@{/modulos/compra/registrar}" method="post"
+                                  class="row g-2 align-items-end">
+                                <input type="hidden" name="listaId" th:value="${lista.id}">
+                                <div class="col-md-3">
+                                    <label class="form-label small">Importe total (€) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control form-control-sm"
+                                        name="importeTotal" step="0.01" min="0.01"
+                                        placeholder="Ej: 34.50" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">Fecha (opcional)</label>
+                                    <input type="date" class="form-control form-control-sm" name="fecha">
+                                </div>
+                                <div class="col-md-4 d-flex align-items-center gap-2 pt-3">
+                                    <div class="form-check mb-0">
+                                        <input class="form-check-input" type="checkbox"
+                                               name="crearGasto" value="true"
+                                               th:id="'crearGasto-' + ${lista.id}">
+                                        <label class="form-check-label small"
+                                               th:for="'crearGasto-' + ${lista.id}">
+                                            Registrar como gasto compartido
+                                            <span th:if="${not #lists.isEmpty(lista.participantes)}"
+                                                  class="text-info small">
+                                                (solo entre participantes)
+                                            </span>
+                                            <span th:if="${#lists.isEmpty(lista.participantes)}"
+                                                  class="text-muted small">
+                                                (entre todos los miembros)
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="submit" class="btn btn-success btn-sm w-100">
+                                        Cerrar compra
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </th:block>
+
+                <div class="alert alert-light border" th:if="${#lists.isEmpty(listasActivas)}">
+                    No hay listas activas. Ve a
+                    <a th:href="@{/modulos/compra/gestion}">Gestión</a>
+                    para crear una nueva.
+                </div>
+
+                <!-- ============================================================
+                     SECCIÓN 2 — HISTORIAL DE COMPRAS
+                     ============================================================ -->
+                <h3 class="mt-5 d-flex align-items-center gap-2">
+                    Historial de compras
+                    <span class="badge bg-success" th:text="${#lists.size(historialCompras)}">0</span>
+                </h3>
+                <p class="text-muted small mb-3">
+                    Compras cerradas. Expande cada entrada para ver los ítems comprados y los participantes.
+                </p>
+
+                <div th:if="${#lists.isEmpty(historialCompras)}" class="text-muted text-center py-3">
+                    Todavía no se ha registrado ninguna compra.
+                </div>
+
+                <div th:unless="${#lists.isEmpty(historialCompras)}"
+                     class="accordion accordion-flush" id="accordion-historial">
+
+                    <div class="accordion-item" th:each="cd : ${historialCompras}">
+
+                        <!-- Cabecera del acordeón -->
+                        <h2 class="accordion-header" th:id="'hc-' + ${cd.compra.id}">
+                            <button class="accordion-button collapsed py-2" type="button"
+                                    data-bs-toggle="collapse"
+                                    th:attr="data-bs-target='#dc-' + ${cd.compra.id},
+                                              aria-controls='dc-' + ${cd.compra.id}">
+
+                                <!-- Nombre de la lista -->
+                                <span class="fw-semibold me-2"
+                                      th:text="${cd.compra.lista.nombre}">Lista</span>
+
+                                <!-- Importe total -->
+                                <span class="badge bg-primary me-2"
+                                      th:text="${#numbers.formatDecimal(cd.compra.importeTotal, 1, 2) + ' €'}">
+                                    0 €</span>
+
+                                <!-- Fecha -->
+                                <span class="text-muted small me-2"
+                                      th:text="${cd.compra.fecha}">fecha</span>
+
+                                <!-- Gasto asociado -->
+                                <span th:if="${cd.compra.gasto != null}"
+                                      class="badge bg-info text-dark me-1">Gasto creado</span>
+
+                                <!-- Nº ítems comprados -->
+                                <span class="badge bg-secondary ms-auto me-2"
+                                      th:text="${#lists.size(cd.itemsComprados)} + ' ítem(s)'">
+                                </span>
+                            </button>
+                        </h2>
+
+                        <!-- Cuerpo del acordeón -->
+                        <div th:id="'dc-' + ${cd.compra.id}"
+                             class="accordion-collapse collapse"
+                             th:attr="aria-labelledby='hc-' + ${cd.compra.id}">
+                            <div class="accordion-body pt-2 pb-3">
+
+                                <!-- Meta de la compra -->
+                                <div class="row g-2 mb-3 small text-muted">
+                                    <div class="col-auto">
+                                        <strong>Pagador:</strong>
+                                        <span th:text="${cd.compra.comprador.firstName + ' ' + cd.compra.comprador.lastName}">nombre</span>
+                                        <span th:text="${'(@' + cd.compra.comprador.username + ')'}">@u</span>
+                                    </div>
+                                    <div class="col-auto">·</div>
+                                    <div class="col-auto">
+                                        <strong>Fecha:</strong> <span th:text="${cd.compra.fecha}">fecha</span>
+                                    </div>
+                                    <div class="col-auto">·</div>
+                                    <div class="col-auto">
+                                        <strong>Total:</strong>
+                                        <span th:text="${#numbers.formatDecimal(cd.compra.importeTotal, 1, 2) + ' €'}">0 €</span>
+                                    </div>
+                                    <div th:if="${cd.compra.gasto != null}" class="col-auto">·</div>
+                                    <div th:if="${cd.compra.gasto != null}" class="col-auto">
+                                        <strong>Gasto:</strong>
+                                        <span th:text="${cd.compra.gasto.concepto + ' (' + #numbers.formatDecimal(cd.compra.gasto.importe, 1, 2) + ' €)'}">
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Participantes de la lista -->
+                                <div class="mb-2 small">
+                                    <strong>Participantes:</strong>
+                                    <span th:if="${#lists.isEmpty(cd.compra.lista.participantes)}"
+                                          class="text-muted">Todos los miembros del piso</span>
+                                    <span th:each="p,stat : ${cd.compra.lista.participantes}"
+                                          th:text="${p.firstName + ' ' + p.lastName + (stat.last ? '' : ', ')}">
+                                        Ana
+                                    </span>
+                                </div>
+
+                                <!-- Ítems comprados -->
+                                <div th:if="${not #lists.isEmpty(cd.itemsComprados)}">
+                                    <p class="small fw-semibold mb-1">Ítems comprados (marcados ✓):</p>
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead class="table-light small">
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th>Categoría</th>
+                                                <th>Cantidad</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="item : ${cd.itemsComprados}">
+                                                <td th:text="${item.producto.nombre}">Producto</td>
+                                                <td>
+                                                    <span class="badge bg-light text-dark border"
+                                                          th:text="${item.producto.categoria}">Cat</span>
+                                                </td>
+                                                <td th:text="${item.cantidad}">1</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <p th:if="${#lists.isEmpty(cd.itemsComprados)}"
+                                   class="text-muted small mb-0">
+                                    Ningún ítem fue marcado como comprado en esta lista.
+                                </p>
+
+                            </div>
+                        </div>
+                    </div><!-- /accordion-item -->
+
+                </div><!-- /accordion -->
+
+            </th:block>
         </div>
     </main>
 
     <th:block th:replace="~{fragments/footer.html :: footer}" />
 
-    <!-- AJAX toggle compra (usa go() de iw.js, que gestiona CSRF automáticamente) -->
+    <!-- AJAX toggle compra -->
     <script th:if="${piso}">
         document.querySelectorAll('.toggle-compra').forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -121,17 +341,21 @@
                 var row = button.closest('tr');
 
                 go('/modulos/compra/item/' + id + '/toggle', 'POST')
-                    .then(function (data) {
-                        if (data.comprado) {
+                    .then(function (resp) {
+                        var comprado = resp.data.comprado;
+                        if (comprado) {
                             button.textContent = '✓';
                             button.className = 'btn btn-sm toggle-compra btn-success';
-                            row.querySelector('td:nth-child(2)').classList.add('text-decoration-line-through', 'text-muted');
+                            row.querySelector('td:nth-child(2)').classList.add(
+                                'text-decoration-line-through', 'text-muted');
                         } else {
                             button.textContent = '○';
                             button.className = 'btn btn-sm toggle-compra btn-outline-secondary';
-                            row.querySelector('td:nth-child(2)').classList.remove('text-decoration-line-through', 'text-muted');
+                            row.querySelector('td:nth-child(2)').classList.remove(
+                                'text-decoration-line-through', 'text-muted');
                         }
-                    });
+                    })
+                    .catch(console.error);
             });
         });
     </script>

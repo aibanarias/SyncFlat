@@ -15,7 +15,8 @@ User ──┬── MiembroPiso ──> Piso
        │   Participante  Asignacion Asistencia   │
        │     Gasto        Tarea      Evento    Item
        │                                      Lista
-       └── Ausencia                           Compra
+       ├── Ausencia                           Compra
+       └── BloqueHorario  (franjas horarias personales)
 ```
 
 ---
@@ -174,6 +175,21 @@ Respuesta de un miembro a un evento. Se crea al primer clic del usuario y puede 
 
 > **Por qué existe:** Si el estado de asistencia estuviera en `Evento`, solo podría almacenarse una respuesta por evento. `AsistenciaEvento` permite que cada miembro tenga su propia respuesta, independiente de la de los demás.
 
+#### `BloqueHorario` — tabla `bloque_horario`
+
+Franja horaria personal de un usuario. Se usa para detectar conflictos entre los compromisos individuales y los eventos del piso.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `id` | `long` | Clave primaria (IDENTITY) |
+| `usuario` | `User` | FK al propietario del bloque |
+| `tipo` | `TipoBloque` | Categoría del bloque: `TRABAJO`, `CLASES`, `ENTRENAMIENTO`, `OTRO` |
+| `descripcion` | `String` | Descripción libre (opcional) |
+| `inicio` | `LocalDateTime` | Inicio del bloque (con hora) |
+| `fin` | `LocalDateTime` | Fin del bloque (con hora); debe ser posterior a `inicio` |
+
+> **Por qué existe:** Un miembro puede tener compromisos personales que no son eventos del piso pero que sí afectan a su disponibilidad. `BloqueHorario` permite registrar esas franjas para que el sistema pueda advertir (de forma informativa) cuando un evento nuevo solapa con ellas. La detección se basa en la condición de solapamiento: `bloque.inicio < evento.fin AND bloque.fin > evento.inicio`.
+
 ---
 
 ### Módulo de lista de la compra
@@ -237,7 +253,7 @@ Notificación interna del piso, de lectura grupal.
 | `piso` | `Piso` | FK al piso destinatario |
 | `mensaje` | `String` | Texto de la alerta |
 | `fecha` | `LocalDateTime` | Cuándo se generó |
-| `tipo` | `TipoAlerta` | `INFO`, `AVISO` u otros valores del enum |
+| `tipo` | `TipoAlerta` | `INFO`, `URGENTE` o `RECORDATORIO` |
 | `leida` | `boolean` | Si ya ha sido vista |
 
 ---
@@ -250,7 +266,8 @@ Notificación interna del piso, de lectura grupal.
 | `EstadoGasto` | `PENDIENTE`, `LIQUIDADO` | `Gasto` |
 | `TipoTarea` | `PUNTUAL`, `RECURRENTE` | `Tarea` |
 | `EstadoAsistencia` | `PENDIENTE`, `CONFIRMADO`, `RECHAZADO` | `AsistenciaEvento` |
-| `TipoAlerta` | `INFO`, `AVISO`… | `Alerta` |
+| `TipoBloque` | `TRABAJO`, `CLASES`, `ENTRENAMIENTO`, `OTRO` | `BloqueHorario` |
+| `TipoAlerta` | `INFO`, `URGENTE`, `RECORDATORIO` | `Alerta` |
 
 Todos los enums se persisten como `String` (`@Enumerated(EnumType.STRING)`) para que los valores en la base de datos sean legibles sin necesitar el código fuente.
 
@@ -300,4 +317,5 @@ Piso  1──n  ListaCompra  1──n  ItemListaCompra  n──1  Producto
 Piso  1──n  Alerta
 Piso  1──n  Liquidacion
 User  1──n  Ausencia
+User  1──n  BloqueHorario
 ```

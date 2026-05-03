@@ -9,8 +9,20 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+/**
+ * Registro de una compra efectuada a partir de una lista de la compra.
+ * <p>
+ * Vincula la {@link ListaCompra} completada con el {@link Gasto} generado
+ * e identifica al miembro que realizó la compra física.
+ */
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 public class Compra {
 
     @Id
@@ -35,63 +47,4 @@ public class Compra {
     @ManyToOne
     @JoinColumn(name = "gasto_id")
     private Gasto gasto;
-
-    public Compra() {
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public LocalDate getFecha() {
-        return fecha;
-    }
-
-    public void setFecha(LocalDate fecha) {
-        this.fecha = fecha;
-    }
-
-    public BigDecimal getImporteTotal() {
-        return importeTotal;
-    }
-
-    public void setImporteTotal(BigDecimal importeTotal) {
-        this.importeTotal = importeTotal;
-    }
-
-    public User getComprador() {
-        return comprador;
-    }
-
-    public void setComprador(User comprador) {
-        this.comprador = comprador;
-    }
-
-    public ListaCompra getLista() {
-        return lista;
-    }
-
-    public void setLista(ListaCompra lista) {
-        this.lista = lista;
-    }
-
-    public Piso getPiso() {
-        return piso;
-    }
-
-    public void setPiso(Piso piso) {
-        this.piso = piso;
-    }
-
-    public Gasto getGasto() {
-        return gasto;
-    }
-
-    public void setGasto(Gasto gasto) {
-        this.gasto = gasto;
-    }
 }

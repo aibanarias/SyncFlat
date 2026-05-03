@@ -6,13 +6,23 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Column;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Unidad habitacional que agrupa a varios usuarios (miembros).
  * Es la entidad raíz del dominio: gastos, tareas, eventos y listas de compra
  * pertenecen siempre a un piso concreto.
+ * <p>
+ * El {@code codigoInvitacion} es un código único alfanumérico de 6 caracteres
+ * generado al crear el piso; los usuarios lo usan para unirse al piso.
  */
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 public class Piso {
 
     @Id
@@ -23,38 +33,9 @@ public class Piso {
     private String direccion;
     private LocalDate fechaCreacion;
 
-    public Piso() {
-    }
+    @Column(nullable = false, unique = true, length = 10)
+    private String codigoInvitacion;
 
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public String getDireccion() {
-        return direccion;
-    }
-
-    public void setDireccion(String direccion) {
-        this.direccion = direccion;
-    }
-
-    public LocalDate getFechaCreacion() {
-        return fechaCreacion;
-    }
-
-    public void setFechaCreacion(LocalDate fechaCreacion) {
-        this.fechaCreacion = fechaCreacion;
-    }
+    /** Número total de habitaciones del piso. {@code null} si no ha sido configurado aún. */
+    private Integer numHabitaciones;
 }

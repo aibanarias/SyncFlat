@@ -2,20 +2,30 @@ package es.ucm.fdi.iw.model;
 
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Evento del calendario compartido de un piso.
  * <p>
- * La asistencia de cada miembro se gestiona mediante {@link AsistenciaEvento},
- * que puede estar en estado PENDIENTE, CONFIRMADO o RECHAZADO.
+ * El campo {@code estado} refleja la aprobación colectiva del evento
+ * ({@link EstadoEvento}). La asistencia individual de cada miembro se gestiona
+ * mediante {@link AsistenciaEvento} y solo tiene sentido en eventos {@code APROBADO}.
  */
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 public class Evento {
 
     @Id
@@ -27,6 +37,26 @@ public class Evento {
     private LocalDateTime fechaInicio;
     private LocalDateTime fechaFin;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EstadoEvento estado = EstadoEvento.PROPUESTO;
+
+    /** Tipo de repetición. {@code null} equivale a {@link TipoRecurrencia#NINGUNA}. */
+    @Enumerated(EnumType.STRING)
+    private TipoRecurrencia tipoRecurrencia;
+
+    /**
+     * Días de la semana para {@link TipoRecurrencia#PERSONALIZADA}.
+     * Formato: enteros ISO separados por coma (1=lunes … 7=domingo), ej: {@code "1,3,5"}.
+     */
+    private String diasSemana;
+
+    /**
+     * ID del primer evento de la serie. {@code null} en eventos no recurrentes.
+     * En la cabeza de serie apunta a sí mismo; en las ocurrencias apunta al id del primero.
+     */
+    private Long serieId;
+
     @ManyToOne
     @JoinColumn(name = "creador_id")
     private User creador;
@@ -34,63 +64,4 @@ public class Evento {
     @ManyToOne
     @JoinColumn(name = "piso_id")
     private Piso piso;
-
-    public Evento() {
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public String getTitulo() {
-        return titulo;
-    }
-
-    public void setTitulo(String titulo) {
-        this.titulo = titulo;
-    }
-
-    public String getDescripcion() {
-        return descripcion;
-    }
-
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
-
-    public LocalDateTime getFechaInicio() {
-        return fechaInicio;
-    }
-
-    public void setFechaInicio(LocalDateTime fechaInicio) {
-        this.fechaInicio = fechaInicio;
-    }
-
-    public LocalDateTime getFechaFin() {
-        return fechaFin;
-    }
-
-    public void setFechaFin(LocalDateTime fechaFin) {
-        this.fechaFin = fechaFin;
-    }
-
-    public User getCreador() {
-        return creador;
-    }
-
-    public void setCreador(User creador) {
-        this.creador = creador;
-    }
-
-    public Piso getPiso() {
-        return piso;
-    }
-
-    public void setPiso(Piso piso) {
-        this.piso = piso;
-    }
 }

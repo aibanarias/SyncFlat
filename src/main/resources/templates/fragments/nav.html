@@ -40,9 +40,6 @@
                             <a class="nav-link" th:href="@{/modulos/calendario}"
                                 href="/modulos/calendario">Calendario</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{/autores}" href="/autores">Autores</a>
-                        </li>
                     </ul>
                     <ul class="navbar-nav ms-auto">
                         <th:block th:if="${u}">
@@ -55,6 +52,15 @@
                                     <img class="iwthumb rounded" th:src="@{/user/{id}/pic(id=${u.id})}">
                                     <span th:text="${u.username}">Pepe</span>
                                 </a>
+                            </li>
+                            <li class="nav-item align-self-center me-2">
+                                <button type="button" id="btn-alertas-ws"
+                                        class="btn btn-outline-warning btn-sm position-relative"
+                                        title="Nuevas alertas del piso" style="display:none">
+                                    🔔 <span id="nav-alertas-badge"
+                                             class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0
+                                        <span class="visually-hidden">nuevas alertas</span></span>
+                                </button>
                             </li>
                             <li class="nav-item align-self-center me-4">
                                 <button type="button" class="btn btn-outline-primary btn-sm position-relative">
@@ -98,6 +104,11 @@
                 </div>
             </div>
         </nav>
+        <!-- Contenedor fijo de toasts para alertas WebSocket -->
+        <div id="alerta-toast-container"
+             class="toast-container position-fixed top-0 end-0 p-3"
+             style="z-index: 1100; margin-top: 60px">
+        </div>
     </header>
 </body>
 

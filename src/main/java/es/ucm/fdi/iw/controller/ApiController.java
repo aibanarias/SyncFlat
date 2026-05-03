@@ -1,20 +1,13 @@
 package es.ucm.fdi.iw.controller;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.ui.Model;
-import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,11 +24,6 @@ import es.ucm.fdi.iw.model.Topic;
 import es.ucm.fdi.iw.model.Message;
 import es.ucm.fdi.iw.model.User;
 import es.ucm.fdi.iw.model.User.Role;
-import io.karatelabs.js.Context;
-import io.karatelabs.js.Interpreter;
-import io.karatelabs.js.Node;
-import io.karatelabs.js.Parser;
-import io.karatelabs.js.Source;
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -56,70 +44,10 @@ public class ApiController {
   @Autowired
   private EntityManager entityManager;
 
-  private static final Logger log = LogManager.getLogger(ApiController.class);
-
-  /** Endpoint de diagnóstico: devuelve el mensaje recibido como campo JSON. */
-  @GetMapping("/status/{message}")
-  public Map<String, String> check(@PathVariable String message) {
-    return Map.of("coder", message);
-  }
-
-  /** Devuelve el número total de usuarios registrados en la base de datos. */
-  @GetMapping("/users/count")
-  public Map<String, Long> usersCount() {
-    return Map.of("count",
-        (Long) entityManager.createQuery("SELECT COUNT(u) FROM User u").getSingleResult());
-  }
-
-  /**
-   * Carga un fichero del classpath, incluyendo el caso en que esté dentro de un JAR.
-   *
-   * @param path ruta relativa a {@code target/classes}
-   * @return fichero localizado
-   */
-  private File loadFromClasspath(String path) {
-      try {
-          return ResourceUtils.getFile("classpath:"+path);
-      } catch (FileNotFoundException e) {
-          throw new RuntimeException("Could not load file from classpath: "+path, e);
-      }
-  }
-
-  /**
-   * Evalúa código JavaScript mediante karate-js, con variables opcionales inyectadas en el contexto.
-   *
-   * @param source código JS a ejecutar
-   * @param vars   variables que se declaran en el contexto antes de la evaluación
-   * @return resultado de la evaluación
-   */
-  private Object eval(String source, Map<String, Object> vars) {
-    Parser parser = new Parser(new Source(source));
-    Node node = parser.parse();
-    Context context = Context.root();
-    if (vars != null) {
-        vars.forEach((k, v) -> context.declare(k, v));
-    }
-    return Interpreter.eval(node, context);
-  }
-
-  /**
-   * Endpoint de prueba que carga {@code static/js/js-eval.js} del classpath
-   * y lo ejecuta con karate-js, devolviendo el resultado.
-   */
-  @GetMapping(value = "/js", produces = MediaType.APPLICATION_JSON_VALUE)
-  public Map<String,String> testJs() throws Exception{
-    String start = Files.readString(
-      loadFromClasspath("static/js/js-eval.js").toPath());
-    String source = start + "\n" + "f(v);";
-
-    Object result = eval(source, Map.of(
-      "v", 10, 
-      "exampleExternalVar", "patata"));
-    return Map.of("result", result.toString());
-  }
-
   @Autowired
   private SimpMessagingTemplate messagingTemplate;
+
+  private static final Logger log = LogManager.getLogger(ApiController.class);
 
   /**
    * Publica un mensaje en un tópico STOMP y lo persiste en base de datos.

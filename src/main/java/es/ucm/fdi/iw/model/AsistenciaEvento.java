@@ -8,6 +8,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Respuesta de un usuario a un evento del calendario.
@@ -15,6 +18,9 @@ import jakarta.persistence.ManyToOne;
  * PENDIENTE → CONFIRMADO → RECHAZADO → PENDIENTE.
  */
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 public class AsistenciaEvento {
 
     @Id
@@ -31,39 +37,4 @@ public class AsistenciaEvento {
 
     @Enumerated(EnumType.STRING)
     private EstadoAsistencia estado;
-
-    public AsistenciaEvento() {
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public Evento getEvento() {
-        return evento;
-    }
-
-    public void setEvento(Evento evento) {
-        this.evento = evento;
-    }
-
-    public User getUsuario() {
-        return usuario;
-    }
-
-    public void setUsuario(User usuario) {
-        this.usuario = usuario;
-    }
-
-    public EstadoAsistencia getEstado() {
-        return estado;
-    }
-
-    public void setEstado(EstadoAsistencia estado) {
-        this.estado = estado;
-    }
 }

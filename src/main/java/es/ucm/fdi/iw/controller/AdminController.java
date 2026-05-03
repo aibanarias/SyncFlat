@@ -6,55 +6,39 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import es.ucm.fdi.iw.model.Topic;
-import es.ucm.fdi.iw.model.Lorem;
 import es.ucm.fdi.iw.model.Message;
 import es.ucm.fdi.iw.model.Transferable;
 import es.ucm.fdi.iw.model.User;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
 
 /**
  * Controlador de administración.
  * <p>
- * Agrupa las operaciones reservadas al rol ADMIN: listado de usuarios,
- * activación/desactivación y carga de datos de prueba.
+ * Agrupa las operaciones reservadas al rol ADMIN: listado de usuarios
+ * y activación/desactivación de cuentas.
  * El acceso está restringido por {@link es.ucm.fdi.iw.SecurityConfig}.
  */
 @Controller
 @RequestMapping("admin")
-public class AdminController {
-
-  @Autowired
-  private PasswordEncoder passwordEncoder;
+public class AdminController extends BaseController {
 
   @Autowired
   private EntityManager entityManager;
 
-  @ModelAttribute
-  public void populateModel(HttpSession session, Model model) {
-    for (String name : new String[] { "u", "url", "ws", "topics"}) {
-      model.addAttribute(name, session.getAttribute(name));
-    }
-  }
-
   private static final Logger log = LogManager.getLogger(AdminController.class);
 
-  @GetMapping("/")
+  @GetMapping({"", "/"})
   public String index(Model model) {
     log.info("Admin acaba de entrar");
     model.addAttribute("users",
@@ -87,41 +71,4 @@ public class AdminController {
         .collect(Collectors.toList());
   }
 
-  /**
-   * Carga datos de prueba: dos grupos y 15 usuarios con contraseña {@code aa}.
-   * Solo para desarrollo; no debe estar expuesto en producción.
-   */
-  @RequestMapping("/populate")
-  @ResponseBody
-  @Transactional
-  public String populate(Model model) {
-
-    Topic g1 = new Topic();
-    g1.setName("g1");
-    g1.setKey(UserController.generateRandomBase64Token(6));
-    entityManager.persist(g1);
-    Topic g2 = new Topic();
-    g2.setName("g2");
-    g2.setKey(UserController.generateRandomBase64Token(6));
-    entityManager.persist(g2);
-
-    for (int i = 0; i < 15; i++) {
-      User u = new User();
-      u.setUsername("user" + i);
-      u.setPassword(passwordEncoder.encode("aa"));
-      u.setEnabled(true);
-      u.setRoles(User.Role.USER.toString());
-      u.setFirstName(Lorem.nombreAlAzar());
-      u.setLastName(Lorem.apellidoAlAzar());
-      entityManager.persist(u);
-      if (i%2 == 0) {
-        g1.getMembers().add(u);
-        // La relación ManyToMany es propiedad de Topic, no de User
-      }
-      if (i%3 == 0) {
-        g2.getMembers().add(u);
-      }
-    }
-    return "{\"admin\": \"populated\"}";
-  }
 }

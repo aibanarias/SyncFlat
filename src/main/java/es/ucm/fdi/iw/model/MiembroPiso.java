@@ -10,6 +10,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Relación entre un usuario y un piso.
@@ -19,6 +22,9 @@ import jakarta.persistence.ManyToOne;
  * que el usuario sigue activo en el piso.
  */
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 public class MiembroPiso {
 
     @Id
@@ -39,54 +45,10 @@ public class MiembroPiso {
     private LocalDate fechaIngreso;
     private LocalDate fechaSalida;
 
-    public MiembroPiso() {
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public Piso getPiso() {
-        return piso;
-    }
-
-    public void setPiso(Piso piso) {
-        this.piso = piso;
-    }
-
-    public User getUsuario() {
-        return usuario;
-    }
-
-    public void setUsuario(User usuario) {
-        this.usuario = usuario;
-    }
-
-    public RolPiso getRolEnPiso() {
-        return rolEnPiso;
-    }
-
-    public void setRolEnPiso(RolPiso rolEnPiso) {
-        this.rolEnPiso = rolEnPiso;
-    }
-
-    public LocalDate getFechaIngreso() {
-        return fechaIngreso;
-    }
-
-    public void setFechaIngreso(LocalDate fechaIngreso) {
-        this.fechaIngreso = fechaIngreso;
-    }
-
-    public LocalDate getFechaSalida() {
-        return fechaSalida;
-    }
-
-    public void setFechaSalida(LocalDate fechaSalida) {
-        this.fechaSalida = fechaSalida;
-    }
+    /**
+     * Número de habitación ocupada por este miembro en el piso.
+     * {@code null} significa que aún no se ha asignado habitación.
+     * El valor se conserva en el histórico aunque el miembro abandone el piso.
+     */
+    private Integer numHabitacion;
 }

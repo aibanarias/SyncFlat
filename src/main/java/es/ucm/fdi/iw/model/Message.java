@@ -15,25 +15,31 @@ import jakarta.persistence.SequenceGenerator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import lombok.Data;
-import lombok.Getter;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
- * A message that users can send each other.
- *
+ * Mensaje directo entre usuarios de la aplicación.
+ * <p>
+ * Se usa {@code @Getter}/{@code @Setter} en lugar de {@code @Data} para evitar
+ * que Lombok genere un {@code toString()} que recorra las relaciones
+ * {@code sender → sent → Message...} produciendo un {@code StackOverflowError}.
  */
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 @NamedQueries({
 	@NamedQuery(name="Message.countUnread",
 	query="SELECT COUNT(m) FROM Message m "
 			+ "WHERE m.recipient.id = :userId AND m.dateRead = null")
 })
-@Data
 public class Message implements Transferable<Message.Transfer> {
-	
-	private static Logger log = LogManager.getLogger(Message.class);	
-	
+
+	private static Logger log = LogManager.getLogger(Message.class);
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "gen")
     @SequenceGenerator(name = "gen", sequenceName = "gen")
@@ -44,15 +50,14 @@ public class Message implements Transferable<Message.Transfer> {
 	private User recipient;
   @ManyToOne
 	private Topic topic;
-  
+
 	private String text;
-	
+
 	private LocalDateTime dateSent;
 	private LocalDateTime dateRead;
-	
+
 	/**
-	 * Objeto para persistir a/de JSON
-	 * @author mfreire
+	 * Objeto para persistir a/de JSON.
 	 */
     @Getter
     @AllArgsConstructor
