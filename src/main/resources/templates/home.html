@@ -11,79 +11,77 @@
 
     <main class="flex-shrink-0">
         <div class="container mt-4">
-            <h1 class="mb-4">Panel del piso</h1>
+            <h1 class="mb-3">Panel del piso</h1>
 
             <th:block th:replace="~{fragments/alerts :: alerts}" />
 
             <!-- Con piso asignado -->
             <th:block th:if="${piso}">
-                <div class="d-flex align-items-center justify-content-between mb-3 p-3 border rounded bg-light">
-                    <div class="d-flex align-items-center flex-wrap gap-2">
-                        <strong th:text="${piso.nombre}">Piso</strong>
-                        <span class="text-muted" th:text="${piso.direccion}">Dirección</span>
-                        <span class="d-flex align-items-center gap-1 ms-2">
-                            <span class="text-muted small">Código:</span>
-                            <span class="badge bg-secondary font-monospace"
-                                  th:text="${piso.codigoInvitacion}">XXXXXX</span>
+
+                <!-- ── Cabecera del piso ─────────────────────────────────────── -->
+                <div class="d-flex align-items-start justify-content-between mb-4 p-3 bg-light rounded">
+                    <div>
+                        <div class="fw-bold" th:text="${piso.nombre}">Piso</div>
+                        <div class="text-muted small" th:text="${piso.direccion}">Dirección</div>
+                        <div class="mt-2 d-flex align-items-center flex-wrap gap-2 small">
+                            <span class="text-muted">Código de invitación:</span>
+                            <code th:text="${piso.codigoInvitacion}"
+                                  class="px-2 bg-white border rounded">XXXXXX</code>
                             <button type="button"
                                     id="btn-copiar-codigo"
                                     th:data-codigo="${piso.codigoInvitacion}"
-                                    class="btn btn-outline-secondary btn-sm py-0 px-2"
-                                    title="Copiar código de invitación">
-                                Copiar
-                            </button>
+                                    class="btn btn-sm btn-link p-0 text-decoration-none"
+                                    title="Copiar código de invitación">Copiar</button>
+                            <span class="text-muted">·</span>
                             <button type="button"
                                     id="btn-compartir-invitacion"
                                     th:data-nombre="${piso.nombre}"
                                     th:data-codigo="${piso.codigoInvitacion}"
-                                    class="btn btn-outline-success btn-sm py-0 px-2"
-                                    title="Compartir invitación">
-                                Compartir
-                            </button>
-                        </span>
+                                    class="btn btn-sm btn-link p-0 text-decoration-none"
+                                    title="Compartir invitación">Compartir</button>
+                        </div>
                     </div>
-                    <form th:action="@{/modulos/piso/abandonar}" method="post" class="mb-0"
+                    <form th:action="@{/modulos/piso/abandonar}" method="post" class="mb-0 ms-3"
                           onsubmit="return confirm('¿Seguro que quieres abandonar el piso? Esta acción no se puede deshacer.')">
                         <button type="submit" class="btn btn-outline-danger btn-sm">Abandonar piso</button>
                     </form>
                 </div>
 
-                <div class="row">
+                <!-- ── Grid principal ──────────────────────────────────────────── -->
+                <div class="row g-4">
+
                     <!-- Alertas -->
-                    <div class="col-md-6 mb-4">
-                        <div class="card">
-                            <div class="card-header bg-warning text-dark d-flex align-items-center justify-content-between">
-                                <span>
-                                    <strong>🔔 Alertas</strong>
-                                    <span class="badge bg-danger ms-2" id="alertas-badge"
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light d-flex align-items-center justify-content-between py-2">
+                                <span class="fw-semibold">
+                                    🔔 Alertas
+                                    <span class="badge rounded-pill bg-danger ms-1" id="alertas-badge"
                                           th:style="${#lists.isEmpty(alertas)} ? 'display:none' : ''"
                                           th:text="${#lists.size(alertas)}">0</span>
                                 </span>
                             </div>
                             <ul class="list-group list-group-flush" id="lista-alertas">
-                                <li class="list-group-item d-flex align-items-start gap-2"
+                                <li class="list-group-item d-flex align-items-start gap-2 py-2"
                                     th:each="a : ${alertas}"
                                     th:id="'alerta-' + ${a.id}">
-                                    <span class="badge mt-1"
+                                    <span class="badge mt-1 flex-shrink-0"
                                           th:classappend="${a.tipo.name() == 'URGENTE'}
                                               ? 'bg-danger'
                                               : (${a.tipo.name() == 'RECORDATORIO'}
                                                   ? 'bg-warning text-dark'
                                                   : 'bg-info text-dark')"
                                           th:text="${a.tipo}">INFO</span>
-                                    <div class="flex-grow-1">
-                                        <span th:text="${a.mensaje}">Mensaje</span>
-                                        <br>
+                                    <div class="flex-grow-1 lh-sm">
+                                        <div th:text="${a.mensaje}">Mensaje</div>
                                         <small class="text-muted"
-                                            th:text="${#temporals.format(a.fecha, 'dd/MM/yyyy HH:mm')}">
-                                            Fecha
-                                        </small>
+                                            th:text="${#temporals.format(a.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</small>
                                     </div>
-                                    <button class="btn btn-sm btn-outline-secondary leer-alerta flex-shrink-0"
+                                    <button class="btn btn-sm btn-outline-secondary leer-alerta flex-shrink-0 py-0"
                                             th:data-id="${a.id}"
                                             title="Marcar como leída">×</button>
                                 </li>
-                                <li class="list-group-item text-muted" id="alertas-vacio"
+                                <li class="list-group-item text-muted small" id="alertas-vacio"
                                     th:style="${not #lists.isEmpty(alertas)} ? 'display:none' : ''">
                                     No hay alertas pendientes.
                                 </li>
@@ -100,20 +98,29 @@
                     </div>
 
                     <!-- Próximos eventos -->
-                    <div class="col-md-6 mb-4">
-                        <div class="card">
-                            <div class="card-header bg-primary text-white">
-                                <strong>📅 Próximos eventos</strong>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light py-2">
+                                <span class="fw-semibold">📅 Próximos eventos</span>
                             </div>
                             <ul class="list-group list-group-flush">
-                                <li class="list-group-item" th:each="e : ${eventos}">
-                                    <strong th:text="${e.titulo}">Evento</strong>
-                                    <br>
-                                    <small class="text-muted"
-                                        th:text="${#temporals.format(e.fechaInicio, 'dd/MM/yyyy HH:mm')}">Fecha</small>
-                                    — <small th:text="${e.descripcion}">Desc</small>
+                                <li class="list-group-item d-flex align-items-start justify-content-between gap-2 py-2"
+                                    th:each="e : ${eventos}">
+                                    <div>
+                                        <div class="fw-semibold" th:text="${e.titulo}">Evento</div>
+                                        <small class="text-muted"
+                                            th:text="${#temporals.format(e.fechaInicio, 'dd/MM HH:mm')}">Fecha</small>
+                                        <span class="text-muted small"
+                                              th:if="${e.descripcion != null and not #strings.isEmpty(e.descripcion)}">
+                                            · <span th:text="${e.descripcion}">Desc</span>
+                                        </span>
+                                    </div>
+                                    <span class="badge flex-shrink-0"
+                                          th:classappend="${e.estado.name() == 'APROBADO'} ? 'bg-success'
+                                                        : (${e.estado.name() == 'RECHAZADO'} ? 'bg-danger' : 'bg-secondary')"
+                                          th:text="${e.estado}">PROPUESTO</span>
                                 </li>
-                                <li class="list-group-item text-muted" th:if="${#lists.isEmpty(eventos)}">
+                                <li class="list-group-item text-muted small" th:if="${#lists.isEmpty(eventos)}">
                                     No hay eventos próximos.
                                 </li>
                             </ul>
@@ -121,21 +128,23 @@
                     </div>
 
                     <!-- Tareas pendientes -->
-                    <div class="col-md-6 mb-4">
-                        <div class="card">
-                            <div class="card-header bg-success text-white">
-                                <strong>✅ Tareas pendientes</strong>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light py-2">
+                                <span class="fw-semibold">✅ Tareas pendientes</span>
                             </div>
                             <ul class="list-group list-group-flush">
-                                <li class="list-group-item" th:each="at : ${tareasPendientes}">
-                                    <strong th:text="${at.tarea.nombre}">Tarea</strong>
-                                    — asignada a <span th:text="${at.usuario.username}">usr</span>
-                                    <br>
-                                    <small class="text-muted" th:if="${at.tarea.fechaLimite}">
-                                        Límite: <span th:text="${at.tarea.fechaLimite}">fecha</span>
+                                <li class="list-group-item py-2" th:each="at : ${tareasPendientes}">
+                                    <div class="fw-semibold" th:text="${at.tarea.nombre}">Tarea</div>
+                                    <small class="text-muted">
+                                        @<span th:text="${at.usuario.username}">usr</span>
+                                        <span th:if="${at.tarea.fechaLimite != null}">
+                                            · Límite:
+                                            <span th:text="${#temporals.format(at.tarea.fechaLimite, 'dd/MM/yyyy')}">fecha</span>
+                                        </span>
                                     </small>
                                 </li>
-                                <li class="list-group-item text-muted" th:if="${#lists.isEmpty(tareasPendientes)}">
+                                <li class="list-group-item text-muted small" th:if="${#lists.isEmpty(tareasPendientes)}">
                                     No hay tareas pendientes.
                                 </li>
                             </ul>
@@ -143,56 +152,58 @@
                     </div>
 
                     <!-- Gastos recientes -->
-                    <div class="col-md-6 mb-4">
-                        <div class="card">
-                            <div class="card-header bg-danger text-white">
-                                <strong>💰 Gastos recientes</strong>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light py-2">
+                                <span class="fw-semibold">💰 Gastos recientes</span>
                             </div>
                             <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex justify-content-between" th:each="g : ${gastos}">
-                                    <div>
-                                        <strong th:text="${g.concepto}">Concepto</strong>
-                                        <br>
+                                <li class="list-group-item d-flex justify-content-between align-items-start gap-2 py-2"
+                                    th:each="g : ${gastos}">
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold" th:text="${g.concepto}">Concepto</div>
                                         <small class="text-muted">
-                                            Pagado por <span th:text="${g.pagador.username}">usr</span>
-                                            el <span th:text="${g.fecha}">fecha</span>
+                                            @<span th:text="${g.pagador.username}">usr</span>
+                                            · <span th:text="${#temporals.format(g.fecha, 'dd/MM/yyyy')}">fecha</span>
                                         </small>
                                     </div>
-                                    <div class="text-end">
-                                        <span class="fw-bold" th:text="${g.importe + ' €'}">0 €</span>
-                                        <br>
+                                    <div class="text-end flex-shrink-0">
+                                        <div class="fw-bold" th:text="${g.importe + ' €'}">0 €</div>
                                         <span class="badge"
-                                            th:classappend="${g.estado.name() == 'PENDIENTE'} ? 'bg-warning text-dark' : 'bg-success'"
-                                            th:text="${g.estado}">PENDIENTE</span>
+                                              th:classappend="${g.estado.name() == 'PENDIENTE'} ? 'bg-warning text-dark' : 'bg-success'"
+                                              th:text="${g.estado}">PENDIENTE</span>
                                     </div>
                                 </li>
-                                <li class="list-group-item text-muted" th:if="${#lists.isEmpty(gastos)}">
+                                <li class="list-group-item text-muted small" th:if="${#lists.isEmpty(gastos)}">
                                     No hay gastos registrados.
                                 </li>
                             </ul>
                         </div>
                     </div>
-                    <!-- =====================================================
-                         HABITACIONES DEL PISO
-                         ===================================================== -->
-                    <div class="col-12 mb-4">
-                        <div class="card shadow-sm">
-                            <div class="card-header bg-info text-dark d-flex align-items-center justify-content-between">
-                                <strong>Habitaciones del piso</strong>
-                                <span th:if="${piso.numHabitaciones != null}" class="d-flex gap-2">
-                                    <span class="badge bg-secondary">Total: <span th:text="${piso.numHabitaciones}">?</span></span>
-                                    <span class="badge bg-danger">Ocupadas: <span th:text="${habitacionesOcupadas}">0</span></span>
-                                    <span class="badge bg-success">Libres: <span th:text="${habitacionesLibres}">0</span></span>
+
+                    <!-- ── Habitaciones del piso ──────────────────────────────── -->
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-light d-flex align-items-center justify-content-between py-2">
+                                <span class="fw-semibold">Habitaciones del piso</span>
+                                <!-- Resumen como texto: Total · Ocupadas · Libres (los tres strings son buscados por tests) -->
+                                <span th:if="${piso.numHabitaciones != null}" class="small text-muted">
+                                    Total: <span th:text="${piso.numHabitaciones}">?</span>
+                                    &nbsp;·&nbsp;
+                                    <span class="text-danger fw-semibold">Ocupadas: <span th:text="${habitacionesOcupadas}">0</span></span>
+                                    &nbsp;·&nbsp;
+                                    <span class="text-success fw-semibold">Libres: <span th:text="${habitacionesLibres}">0</span></span>
                                 </span>
-                                <span th:unless="${piso.numHabitaciones != null}" class="badge bg-secondary">Total no configurado</span>
+                                <span th:unless="${piso.numHabitaciones != null}"
+                                      class="text-muted small">Total no configurado</span>
                             </div>
 
                             <div class="card-body">
                                 <div class="row g-4">
 
-                                    <!-- ── Miembros activos ── -->
+                                    <!-- Miembros activos -->
                                     <div class="col-md-4">
-                                        <h6 class="fw-semibold mb-2">Miembros activos</h6>
+                                        <h6 class="fw-semibold mb-3">Miembros activos</h6>
                                         <table class="table table-sm table-hover mb-0">
                                             <thead class="table-light">
                                                 <tr>
@@ -213,21 +224,20 @@
                                                         <span th:if="${mp.rolEnPiso.name() == 'ADMIN'}"
                                                               class="badge bg-warning text-dark">ADMIN</span>
                                                         <span th:unless="${mp.rolEnPiso.name() == 'ADMIN'}"
-                                                              class="badge bg-light text-dark border">MIEMBRO</span>
+                                                              class="text-muted small">Miembro</span>
                                                     </td>
                                                     <td>
                                                         <span th:if="${mp.numHabitacion != null}"
-                                                              class="badge bg-primary"
+                                                              class="fw-semibold"
                                                               th:text="${mp.numHabitacion}">0</span>
                                                         <span th:unless="${mp.numHabitacion != null}"
-                                                              class="text-muted small">—</span>
+                                                              class="text-muted">—</span>
                                                     </td>
-                                                    <!-- Botón de promover: solo para ADMINs y sobre no-ADMINs que no sean el propio usuario -->
                                                     <td th:if="${esAdmin}">
                                                         <form th:if="${mp.rolEnPiso.name() != 'ADMIN' && miMembresia != null && mp.usuario.id != miMembresia.usuario.id}"
                                                               th:action="@{/modulos/piso/promover-admin}" method="post" class="mb-0">
                                                             <input type="hidden" name="membresiaId" th:value="${mp.id}">
-                                                            <button type="submit" class="btn btn-warning btn-sm py-0"
+                                                            <button type="submit" class="btn btn-outline-warning btn-sm py-0"
                                                                     title="Promover a administrador"
                                                                     onclick="return confirm('¿Promover a este miembro como administrador del piso?')">
                                                                 +Admin
@@ -239,38 +249,32 @@
                                         </table>
                                     </div>
 
-                                    <!-- ── Estado por habitación ── -->
+                                    <!-- Estado por habitación — tiles en lugar de tabla -->
                                     <div class="col-md-4" th:if="${ocupacionHabitaciones != null}">
-                                        <h6 class="fw-semibold mb-2">Estado por habitación</h6>
-                                        <table class="table table-sm table-bordered mb-0">
-                                            <thead class="table-light">
-                                                <tr><th>Hab.</th><th>Estado</th><th>Ocupante</th></tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr th:each="entry : ${ocupacionHabitaciones}">
-                                                    <td class="fw-semibold text-center" th:text="${entry.key}">1</td>
-                                                    <td th:if="${entry.value != null}">
-                                                        <span class="badge bg-danger">Ocupada</span>
-                                                    </td>
-                                                    <td th:unless="${entry.value != null}">
-                                                        <span class="badge bg-success">Libre</span>
-                                                    </td>
-                                                    <td th:if="${entry.value != null}"
-                                                        th:text="${entry.value.usuario.username}">usr</td>
-                                                    <td th:unless="${entry.value != null}"
-                                                        class="text-muted small">—</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                        <div th:if="${ocupacionHabitaciones == null}" class="text-muted small mt-1">
-                                            Configura el número de habitaciones para ver este panel.
+                                        <h6 class="fw-semibold mb-3">Estado por habitación</h6>
+                                        <div class="row row-cols-2 g-2">
+                                            <div class="col" th:each="entry : ${ocupacionHabitaciones}">
+                                                <div class="border rounded p-2 text-center">
+                                                    <div class="text-muted small mb-1">
+                                                        Hab. <span th:text="${entry.key}">1</span>
+                                                    </div>
+                                                    <span th:if="${entry.value != null}"
+                                                          class="badge bg-danger">Ocupada</span>
+                                                    <span th:unless="${entry.value != null}"
+                                                          class="badge bg-success">Libre</span>
+                                                    <div class="small text-truncate mt-1"
+                                                         th:if="${entry.value != null}"
+                                                         th:text="${entry.value.usuario.username}">usr</div>
+                                                    <div class="small text-muted mt-1"
+                                                         th:unless="${entry.value != null}">—</div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <!-- ── Formularios de edición ── -->
+                                    <!-- Formularios de edición -->
                                     <div class="col-md-4 d-flex flex-column gap-3">
 
-                                        <!-- Mi habitación -->
                                         <form th:action="@{/modulos/piso/habitaciones/mi-habitacion}" method="post">
                                             <label class="form-label fw-semibold small">Mi habitación</label>
                                             <div class="input-group input-group-sm">
@@ -287,11 +291,11 @@
                                             </div>
                                         </form>
 
-                                        <!-- Configurar total — solo ADMINs -->
                                         <div>
                                             <label class="form-label fw-semibold small">
                                                 Habitaciones totales del piso
-                                                <span th:unless="${esAdmin}" class="badge bg-warning text-dark ms-1">Solo ADMIN</span>
+                                                <span th:unless="${esAdmin}"
+                                                      class="badge bg-warning text-dark ms-1">Solo ADMIN</span>
                                             </label>
                                             <fieldset th:disabled="${!esAdmin}">
                                                 <form th:action="@{/modulos/piso/habitaciones/configurar}" method="post">
@@ -344,9 +348,7 @@
                 .catch(console.error);
         });
 
-        // ── Nuevas alertas por WebSocket: actualiza lista sin recargar ────────────────────
-        // footer.html ya instala ws.onAlerta para el toast global; aquí lo envolvemos
-        // para también insertar el ítem en la card de alertas de home.
+        // ── Nuevas alertas por WebSocket ─────────────────────────────────────────────────
         (function () {
             var _prev = ws.onAlerta;
             ws.onAlerta = function (data) {
@@ -365,13 +367,13 @@
                     hour: '2-digit', minute: '2-digit'
                 });
                 var li = document.createElement('li');
-                li.className = 'list-group-item d-flex align-items-start gap-2';
+                li.className = 'list-group-item d-flex align-items-start gap-2 py-2';
                 li.id = 'alerta-' + data.id;
                 li.innerHTML =
-                    '<span class="badge mt-1 ' + colorClass + '">' + data.tipoAlerta + '</span>' +
-                    '<div class="flex-grow-1"><span>' + data.mensaje + '</span><br>' +
+                    '<span class="badge mt-1 flex-shrink-0 ' + colorClass + '">' + data.tipoAlerta + '</span>' +
+                    '<div class="flex-grow-1 lh-sm"><div>' + data.mensaje + '</div>' +
                     '<small class="text-muted">' + fecha + '</small></div>' +
-                    '<button class="btn btn-sm btn-outline-secondary leer-alerta flex-shrink-0"' +
+                    '<button class="btn btn-sm btn-outline-secondary leer-alerta flex-shrink-0 py-0"' +
                     ' data-id="' + data.id + '" title="Marcar como leída">×</button>';
                 lista.insertBefore(li, lista.firstChild);
 
@@ -383,7 +385,7 @@
             };
         })();
 
-        // ── Copiar código / Compartir invitación (Web Share API + fallback WhatsApp) ──────────
+        // ── Copiar código / Compartir invitación (Web Share API + fallback WhatsApp) ──────
         (function () {
             function copiarTexto(texto, btn) {
                 var etiquetaOrig = btn.textContent;
@@ -409,8 +411,8 @@
                 }
             }
 
-            var btnCopiar     = document.getElementById('btn-copiar-codigo');
-            var btnCompartir  = document.getElementById('btn-compartir-invitacion');
+            var btnCopiar    = document.getElementById('btn-copiar-codigo');
+            var btnCompartir = document.getElementById('btn-compartir-invitacion');
 
             if (btnCopiar) {
                 btnCopiar.addEventListener('click', function () {
