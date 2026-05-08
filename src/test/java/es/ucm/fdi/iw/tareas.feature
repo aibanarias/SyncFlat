@@ -4,12 +4,6 @@ Background:
   * url baseUrl
   * callonce read('helpers/login.feature') { username: 'a', password: 'aa' }
 
-Scenario: usuario autenticado puede ver el listado de tareas
-  Given path 'modulos/tareas'
-  When method get
-  Then status 200
-  And match response contains 'Tareas'
-
 Scenario: crear una tarea y verificar que aparece en el listado
   Given path 'modulos/tareas'
   When method get

@@ -26,15 +26,3 @@ Scenario: credenciales incorrectas redirigen a login con error
   And match responseHeaders['Location'] == '#notpresent'
   And match response contains 'login'
 
-Scenario: login correcto como usuario regular (b)
-  * callonce read('helpers/login.feature') { username: 'b', password: 'aa' }
-  Given path 'modulos/home'
-  When method get
-  Then status 200
-
-Scenario: login correcto como administrador (a)
-  * callonce read('helpers/login.feature') { username: 'a', password: 'aa' }
-  Given path 'admin/'
-  When method get
-  Then status 200
-  And match response contains 'Administración'

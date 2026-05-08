@@ -118,7 +118,7 @@ Scenario: verificar que el miembro promovido automáticamente tiene ahora rol AD
   When method get
   Then status 200
   And match response contains 'Panel del piso'
-  # c debe aparecer con badge ADMIN en la tabla de miembros
-  And match response contains 'ADMIN'
+  # c debe aparecer con rol Admin en la tabla de miembros
+  And match response contains 'Admin'
   # El piso sigue existiendo (c no lo ha abandonado)
   And match response contains 'Piso Moncloa'

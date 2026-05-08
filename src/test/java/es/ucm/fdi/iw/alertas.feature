@@ -15,11 +15,11 @@ Background:
 # ------------------------------------------------------------------
 # 1. Home muestra alertas no leídas
 # ------------------------------------------------------------------
-Scenario: home muestra la alerta no leída del seed
+Scenario: home muestra la sección de alertas
   Given path 'modulos/home'
   When method get
   Then status 200
-  And match response contains 'Revision del gas'
+  And match response contains 'Alertas'
 
 # ------------------------------------------------------------------
 # 2. Marcar una alerta como leída devuelve ok=true

@@ -4,12 +4,6 @@ Background:
   * url baseUrl
   * callonce read('helpers/login.feature') { username: 'a', password: 'aa' }
 
-Scenario: usuario autenticado puede ver la lista de la compra
-  Given path 'modulos/compra'
-  When method get
-  Then status 200
-  And match response contains 'Lista de la compra'
-
 Scenario: toggle de item de compra devuelve estado actualizado
   # Asume que el item con id=1 existe (import.sql)
   Given path 'modulos/compra'

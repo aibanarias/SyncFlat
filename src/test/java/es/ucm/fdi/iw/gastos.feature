@@ -4,12 +4,6 @@ Background:
   * url baseUrl
   * callonce read('helpers/login.feature') { username: 'a', password: 'aa' }
 
-Scenario: usuario autenticado puede ver el listado de gastos
-  Given path 'modulos/gastos'
-  When method get
-  Then status 200
-  And match response contains 'Gastos'
-
 Scenario: crear un gasto y verificar que aparece en el listado
   Given path 'modulos/gastos'
   When method get

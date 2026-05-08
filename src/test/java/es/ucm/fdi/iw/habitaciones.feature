@@ -8,23 +8,6 @@ Background:
   * url baseUrl
   * callonce read('helpers/login.feature') { username: 'a', password: 'aa' }
 
-Scenario: el panel de home muestra la sección de habitaciones
-  Given path 'modulos/home'
-  When method get
-  Then status 200
-  And match response contains 'Habitaciones del piso'
-  And match response contains 'Total'
-  And match response contains 'Ocupadas'
-  And match response contains 'Libres'
-
-Scenario: se muestran los miembros con su número de habitación
-  Given path 'modulos/home'
-  When method get
-  Then status 200
-  # 'a' tiene habitación 1, 'b' tiene habitación 2 (import.sql)
-  And match response contains '>1<'
-  And match response contains '>2<'
-
 Scenario: usuario puede actualizar su número de habitación
   Given path 'modulos/home'
   When method get

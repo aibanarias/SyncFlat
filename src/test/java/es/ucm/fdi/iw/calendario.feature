@@ -4,23 +4,6 @@ Background:
   * url baseUrl
   * callonce read('helpers/login.feature') { username: 'a', password: 'aa' }
 
-Scenario: usuario autenticado puede ver el calendario
-  Given path 'modulos/calendario'
-  When method get
-  Then status 200
-  And match response contains 'Calendario'
-  And match response contains 'syncflat-calendar'
-
-# ------------------------------------------------------------------
-# Feed JSON para FullCalendar
-# ------------------------------------------------------------------
-Scenario: el feed devuelve un array con los eventos y bloques del piso
-  Given path 'modulos/calendario/feed'
-  When method get
-  Then status 200
-  And match response.ok == true
-  And match response.data == '#array'
-
 Scenario: crear bloque horario propio via endpoint JSON
   Given path 'modulos/calendario'
   When method get

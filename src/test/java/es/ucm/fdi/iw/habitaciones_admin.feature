@@ -30,8 +30,8 @@ Scenario: creador de piso obtiene rol ADMIN automáticamente
   When method post
   Then status 200
   And match response contains 'Panel del piso'
-  # El badge ADMIN debe aparecer para c en la tabla de miembros
-  And match response contains 'ADMIN'
+  # El rol Admin debe aparecer en la tabla de miembros para c
+  And match response contains 'Admin'
 
 # ------------------------------------------------------------------
 # 2. Un MIEMBRO no puede configurar el número de habitaciones
@@ -84,8 +84,8 @@ Scenario: ADMIN puede promover a un miembro a administrador
   When method post
   Then status 200
   And match response contains 'Panel del piso'
-  # Tras la promoción, 'b' debe aparecer con badge ADMIN
-  And match response contains 'ADMIN'
+  # Tras la promoción, 'b' debe aparecer con rol Admin
+  And match response contains 'Admin'
 
 # ------------------------------------------------------------------
 # 5. El último miembro activo abandona → el piso se elimina
