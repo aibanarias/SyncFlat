@@ -7,6 +7,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,7 +84,7 @@ public class GastoService {
     }
 
     /**
-     * Historial completo de gastos del piso con sus participaciones agrupadas, ordenado por fecha desc.
+     * Devuelve los 10 gastos más recientes del piso con sus participaciones agrupadas.
      * Se emite una sola consulta extra para las participaciones (evita N+1).
      */
     @Transactional(readOnly = true)
@@ -90,6 +93,7 @@ public class GastoService {
             .createQuery("SELECT g FROM Gasto g WHERE g.piso.id = :pid ORDER BY g.fecha DESC",
                 Gasto.class)
             .setParameter("pid", pisoId)
+            .setMaxResults(10)
             .getResultList();
         if (gastos.isEmpty()) return List.of();
 
@@ -201,10 +205,14 @@ public class GastoService {
     }
 
     /**
-     * Crea un gasto y reparte su importe a partes iguales entre los miembros activos.
-     * El pagador queda marcado como {@code pagado = true} desde el inicio.
+     * Crea un gasto y reparte su importe a partes iguales entre los participantes seleccionados.
+     * <p>
+     * Si {@code form.getParticipanteIds()} está vacío (ningún checkbox marcado), el reparto
+     * recae sobre todos los miembros activos del piso (fallback explícito, no silencioso).
+     * Los IDs recibidos que no correspondan a miembros activos del piso son ignorados.
+     * El pagador queda marcado con {@code pagado = true} si aparece en el reparto.
      *
-     * @param form      datos validados del formulario
+     * @param form      datos validados del formulario (incluye participanteIds)
      * @param pagadorId identificador del usuario que paga
      * @param piso      piso al que pertenece el gasto
      */
@@ -222,24 +230,50 @@ public class GastoService {
         entityManager.persist(g);
         entityManager.flush();
 
-        List<MiembroPiso> miembros = cargarMiembrosActivos(piso.getId());
-        if (!miembros.isEmpty()) {
+        List<MiembroPiso> miembrosActivos = cargarMiembrosActivos(piso.getId());
+        List<User> aRepartir = resolverParticipantes(form.getParticipanteIds(), miembrosActivos);
+
+        if (!aRepartir.isEmpty()) {
             BigDecimal cuota = form.getImporte()
-                .divide(BigDecimal.valueOf(miembros.size()), 2, RoundingMode.HALF_UP);
-            for (MiembroPiso mp : miembros) {
+                .divide(BigDecimal.valueOf(aRepartir.size()), 2, RoundingMode.HALF_UP);
+            for (User u : aRepartir) {
                 ParticipanteGasto pg = new ParticipanteGasto();
                 pg.setGasto(g);
-                pg.setUsuario(mp.getUsuario());
+                pg.setUsuario(u);
                 pg.setImporteAsignado(cuota);
-                pg.setPagado(mp.getUsuario().getId() == pagadorId);
+                pg.setPagado(u.getId() == pagadorId);
                 entityManager.persist(pg);
             }
         }
         alertaService.crearAlerta(
             "Nuevo gasto: " + g.getConcepto() + " — " + g.getImporte() + " €",
             TipoAlerta.URGENTE, piso);
-        log.info("Gasto '{}' creado por {} — {} €, repartido entre {} miembros",
-            g.getConcepto(), pagador.getUsername(), g.getImporte(), miembros.size());
+        log.info("Gasto '{}' creado por {} — {} €, repartido entre {} participante(s)",
+            g.getConcepto(), pagador.getUsername(), g.getImporte(), aRepartir.size());
+    }
+
+    /**
+     * Determina la lista de usuarios entre los que se reparte el gasto.
+     * Si la selección está vacía o ninguno es miembro activo, usa todos los miembros activos.
+     */
+    private List<User> resolverParticipantes(List<Long> seleccionados, List<MiembroPiso> miembrosActivos) {
+        if (seleccionados == null || seleccionados.isEmpty()) {
+            log.debug("Sin participantes seleccionados; fallback a todos los miembros activos");
+            return miembrosActivos.stream().map(MiembroPiso::getUsuario).toList();
+        }
+        Set<Long> idsActivos = miembrosActivos.stream()
+            .map(mp -> mp.getUsuario().getId())
+            .collect(Collectors.toSet());
+        List<User> filtrados = seleccionados.stream()
+            .filter(idsActivos::contains)
+            .map(id -> entityManager.find(User.class, id))
+            .filter(Objects::nonNull)
+            .toList();
+        if (filtrados.isEmpty()) {
+            log.warn("Ningún participanteId válido recibido; fallback a todos los miembros activos");
+            return miembrosActivos.stream().map(MiembroPiso::getUsuario).toList();
+        }
+        return filtrados;
     }
 
     /**

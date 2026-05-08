@@ -52,9 +52,9 @@
                     <!-- Alertas -->
                     <div class="col-md-6 mb-4">
                         <div class="card">
-                            <div class="card-header bg-warning text-dark d-flex align-items-center justify-content-between">
+                            <div class="card-header fw-semibold d-flex align-items-center justify-content-between">
                                 <span>
-                                    <strong>🔔 Alertas</strong>
+                                    <i class="bi bi-bell-fill me-1"></i> Alertas
                                     <span class="badge bg-danger ms-2" id="alertas-badge"
                                           th:style="${#lists.isEmpty(alertas)} ? 'display:none' : ''"
                                           th:text="${#lists.size(alertas)}">0</span>
@@ -102,8 +102,8 @@
                     <!-- Próximos eventos -->
                     <div class="col-md-6 mb-4">
                         <div class="card">
-                            <div class="card-header bg-primary text-white">
-                                <strong>📅 Próximos eventos</strong>
+                            <div class="card-header fw-semibold">
+                                <i class="bi bi-calendar-event me-1"></i> Próximos eventos
                             </div>
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item" th:each="e : ${eventos}">
@@ -123,8 +123,8 @@
                     <!-- Tareas pendientes -->
                     <div class="col-md-6 mb-4">
                         <div class="card">
-                            <div class="card-header bg-success text-white">
-                                <strong>✅ Tareas pendientes</strong>
+                            <div class="card-header fw-semibold">
+                                <i class="bi bi-list-check me-1"></i> Tareas pendientes
                             </div>
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item" th:each="at : ${tareasPendientes}">
@@ -145,8 +145,8 @@
                     <!-- Gastos recientes -->
                     <div class="col-md-6 mb-4">
                         <div class="card">
-                            <div class="card-header bg-danger text-white">
-                                <strong>💰 Gastos recientes</strong>
+                            <div class="card-header fw-semibold">
+                                <i class="bi bi-wallet2 me-1"></i> Gastos recientes
                             </div>
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item d-flex justify-content-between" th:each="g : ${gastos}">
@@ -161,9 +161,8 @@
                                     <div class="text-end">
                                         <span class="fw-bold" th:text="${g.importe + ' €'}">0 €</span>
                                         <br>
-                                        <span class="badge"
-                                            th:classappend="${g.estado.name() == 'PENDIENTE'} ? 'bg-warning text-dark' : 'bg-success'"
-                                            th:text="${g.estado}">PENDIENTE</span>
+                                        <span th:classappend="${g.estado.name() == 'PENDIENTE'} ? 'text-warning fw-semibold small' : 'text-success fw-semibold small'"
+                                              th:text="${g.estado.name() == 'PENDIENTE'} ? 'Pendiente' : 'Liquidado'">Pendiente</span>
                                     </div>
                                 </li>
                                 <li class="list-group-item text-muted" th:if="${#lists.isEmpty(gastos)}">
@@ -177,14 +176,14 @@
                          ===================================================== -->
                     <div class="col-12 mb-4">
                         <div class="card shadow-sm">
-                            <div class="card-header bg-info text-dark d-flex align-items-center justify-content-between">
-                                <strong>Habitaciones del piso</strong>
-                                <span th:if="${piso.numHabitaciones != null}" class="d-flex gap-2">
-                                    <span class="badge bg-secondary">Total: <span th:text="${piso.numHabitaciones}">?</span></span>
-                                    <span class="badge bg-danger">Ocupadas: <span th:text="${habitacionesOcupadas}">0</span></span>
-                                    <span class="badge bg-success">Libres: <span th:text="${habitacionesLibres}">0</span></span>
+                            <div class="card-header fw-semibold d-flex align-items-center justify-content-between">
+                                <span><i class="bi bi-house-door me-1"></i> Habitaciones del piso</span>
+                                <span th:if="${piso.numHabitaciones != null}" class="text-muted small fw-normal">
+                                    Total: <span th:text="${piso.numHabitaciones}">?</span>
+                                    &nbsp;·&nbsp; Ocupadas: <span th:text="${habitacionesOcupadas}">0</span>
+                                    &nbsp;·&nbsp; Libres: <span th:text="${habitacionesLibres}">0</span>
                                 </span>
-                                <span th:unless="${piso.numHabitaciones != null}" class="badge bg-secondary">Total no configurado</span>
+                                <span th:unless="${piso.numHabitaciones != null}" class="text-muted small fw-normal">Sin configurar</span>
                             </div>
 
                             <div class="card-body">
@@ -211,16 +210,15 @@
                                                     </td>
                                                     <td>
                                                         <span th:if="${mp.rolEnPiso.name() == 'ADMIN'}"
-                                                              class="badge bg-warning text-dark">ADMIN</span>
+                                                              class="text-warning fw-semibold small">Admin</span>
                                                         <span th:unless="${mp.rolEnPiso.name() == 'ADMIN'}"
-                                                              class="badge bg-light text-dark border">MIEMBRO</span>
+                                                              class="text-muted small">Miembro</span>
                                                     </td>
                                                     <td>
                                                         <span th:if="${mp.numHabitacion != null}"
-                                                              class="badge bg-primary"
                                                               th:text="${mp.numHabitacion}">0</span>
                                                         <span th:unless="${mp.numHabitacion != null}"
-                                                              class="text-muted small">—</span>
+                                                              class="text-muted">—</span>
                                                     </td>
                                                     <!-- Botón de promover: solo para ADMINs y sobre no-ADMINs que no sean el propio usuario -->
                                                     <td th:if="${esAdmin}">
@@ -250,10 +248,10 @@
                                                 <tr th:each="entry : ${ocupacionHabitaciones}">
                                                     <td class="fw-semibold text-center" th:text="${entry.key}">1</td>
                                                     <td th:if="${entry.value != null}">
-                                                        <span class="badge bg-danger">Ocupada</span>
+                                                        <span class="text-danger small">Ocupada</span>
                                                     </td>
                                                     <td th:unless="${entry.value != null}">
-                                                        <span class="badge bg-success">Libre</span>
+                                                        <span class="text-success small">Libre</span>
                                                     </td>
                                                     <td th:if="${entry.value != null}"
                                                         th:text="${entry.value.usuario.username}">usr</td>
@@ -291,7 +289,7 @@
                                         <div>
                                             <label class="form-label fw-semibold small">
                                                 Habitaciones totales del piso
-                                                <span th:unless="${esAdmin}" class="badge bg-warning text-dark ms-1">Solo ADMIN</span>
+                                                <span th:unless="${esAdmin}" class="text-warning small ms-1">Solo admin</span>
                                             </label>
                                             <fieldset th:disabled="${!esAdmin}">
                                                 <form th:action="@{/modulos/piso/habitaciones/configurar}" method="post">

@@ -7,7 +7,11 @@
     <style>
         .balance-row-yo    { background: #fff3cd; }
         .balance-row-acree { background: #d1e7dd; }
-        .accordion-button:not(.collapsed) { background: #f8f9fa; color: inherit; box-shadow: none; }
+        .hist-row-summary  { cursor: pointer; }
+        .hist-row-summary:hover td { background: #f8f9fa; }
+        .hist-detail td    { padding: 0; border: 0; }
+        .hist-chevron      { transition: transform 0.18s ease; }
+        tr[data-bs-toggle="collapse"][aria-expanded="true"] .hist-chevron { transform: rotate(90deg); }
     </style>
 </head>
 
@@ -42,23 +46,20 @@
                      SECCIÓN 1: Balance neto del piso
                      ══════════════════════════════════════════════════════════ -->
                 <div class="card mb-4" id="balance">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <span class="fw-semibold">⚖ Balance entre compañeros</span>
-                        <span class="badge bg-secondary"
-                              th:text="${#lists.size(balances)} + ' deuda' + (${#lists.size(balances)} == 1 ? '' : 's')">
-                        </span>
+                    <div class="card-header fw-semibold">
+                        <i class="bi bi-people me-1"></i> Balance entre compañeros
                     </div>
                     <div class="card-body p-0">
 
                         <!-- Saldado -->
                         <div th:if="${#lists.isEmpty(balances)}" class="text-center py-3">
-                            <span class="fs-3 text-success">✓</span>
-                            <p class="mb-0 small fw-semibold text-success">Todo está en orden. No hay deudas pendientes.</p>
+                            <p class="mb-0 small fw-semibold text-success">
+                                <i class="bi bi-check-circle me-1"></i>Todo está en orden. No hay deudas pendientes.
+                            </p>
                         </div>
 
                         <!-- Tabla de deudas netas -->
                         <th:block th:unless="${#lists.isEmpty(balances)}">
-                            <!-- Nota explicativa del neto -->
                             <div class="px-3 pt-2 pb-1">
                                 <p class="text-muted small mb-0">
                                     Importes <strong>netos</strong> tras compensar deudas cruzadas entre cada par.
@@ -79,7 +80,7 @@
                                 </thead>
                                 <tbody>
                                     <tr th:each="d : ${balances}"
-                                        th:class="${d.deudor().id == u?.id}    ? 'balance-row-yo'
+                                        th:class="${d.deudor().id == u?.id}     ? 'balance-row-yo'
                                                  : (${d.acreedor().id == u?.id} ? 'balance-row-acree' : '')">
                                         <td>
                                             <span class="fw-semibold"
@@ -94,7 +95,7 @@
                                                    th:text="${'@' + d.acreedor().username}">@u</small>
                                         </td>
                                         <td class="text-end">
-                                            <span class="badge bg-danger"
+                                            <span class="text-danger fw-semibold"
                                                   th:text="${#numbers.formatDecimal(d.importe(), 1, 2) + ' €'}">0.00 €</span>
                                         </td>
                                     </tr>
@@ -108,21 +109,22 @@
                      SECCIÓN 2: Mis operaciones pendientes
                      ══════════════════════════════════════════════════════════ -->
                 <div class="card mb-4" id="mis-operaciones" th:if="${u != null}">
-                    <div class="card-header fw-semibold">👤 Mis operaciones pendientes</div>
+                    <div class="card-header fw-semibold"><i class="bi bi-person-check me-1"></i> Mis operaciones pendientes</div>
                     <div class="card-body">
 
                         <!-- Todo en orden -->
                         <div th:if="${#lists.isEmpty(loDebo) and #lists.isEmpty(meDeben)}"
                              class="text-center py-2">
-                            <span class="fs-3 text-success">✓</span>
-                            <p class="mb-0 small fw-semibold text-success">No tienes operaciones pendientes.</p>
+                            <p class="mb-0 small fw-semibold text-success">
+                                <i class="bi bi-check-circle me-1"></i>No tienes operaciones pendientes.
+                            </p>
                         </div>
 
-                        <!-- Cuando hay algo pendiente: muestra nota explicativa del neto -->
+                        <!-- Nota explicativa -->
                         <div th:unless="${#lists.isEmpty(loDebo) and #lists.isEmpty(meDeben)}"
                              class="alert alert-light py-2 px-3 small mb-3">
                             El <a href="#balance" class="alert-link">balance neto</a> resulta de restar
-                            lo que recibirás a lo que debes pagar en los gastos concretos de abajo.
+                            lo que recibirás a lo que debes pagar en los gastos de abajo.
                             <span th:if="${totalLoDebo.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
                                 Total bruto a pagar:
                                 <strong th:text="${#numbers.formatDecimal(totalLoDebo, 1, 2) + ' €'}">0 €</strong>.
@@ -133,11 +135,11 @@
                             </span>
                         </div>
 
-                        <!-- Lo que debo: gastos donde soy deudor -->
+                        <!-- Lo que debo -->
                         <div th:unless="${#lists.isEmpty(loDebo)}" class="mb-3">
                             <h6 class="text-danger fw-semibold mb-2">
                                 Tengo que pagar
-                                <span class="badge bg-danger ms-1 fw-normal"
+                                <span class="fw-normal"
                                       th:text="${#numbers.formatDecimal(totalLoDebo, 1, 2) + ' €'}">0 €</span>
                             </h6>
                             <table class="table table-sm align-middle mb-0">
@@ -154,10 +156,10 @@
                                         <td th:text="${pg.gasto.concepto}">concepto</td>
                                         <td class="small text-muted">
                                             <span th:text="${pg.gasto.pagador.firstName + ' ' + pg.gasto.pagador.lastName}">Pagador</span>
-                                            <span class="ms-1" th:text="${'@' + pg.gasto.pagador.username}">@u</span>
+                                            <small class="ms-1" th:text="${'@' + pg.gasto.pagador.username}">@u</small>
                                         </td>
                                         <td class="text-end">
-                                            <span class="badge bg-danger"
+                                            <span class="text-danger fw-semibold"
                                                   th:text="${#numbers.formatDecimal(pg.importeAsignado, 1, 2) + ' €'}">0 €</span>
                                         </td>
                                         <td>
@@ -171,11 +173,11 @@
                             </table>
                         </div>
 
-                        <!-- Lo que me deben: gastos donde soy pagador -->
+                        <!-- Lo que me deben -->
                         <div th:unless="${#lists.isEmpty(meDeben)}">
                             <h6 class="text-success fw-semibold mb-2">
                                 Pendiente de recibir
-                                <span class="badge bg-success ms-1 fw-normal"
+                                <span class="fw-normal"
                                       th:text="${#numbers.formatDecimal(totalMeDeben, 1, 2) + ' €'}">0 €</span>
                             </h6>
                             <table class="table table-sm align-middle mb-0">
@@ -192,10 +194,10 @@
                                         <td th:text="${pg.gasto.concepto}">concepto</td>
                                         <td class="small text-muted">
                                             <span th:text="${pg.usuario.firstName + ' ' + pg.usuario.lastName}">Deudor</span>
-                                            <span class="ms-1" th:text="${'@' + pg.usuario.username}">@u</span>
+                                            <small class="ms-1" th:text="${'@' + pg.usuario.username}">@u</small>
                                         </td>
                                         <td class="text-end">
-                                            <span class="badge bg-success"
+                                            <span class="text-success fw-semibold"
                                                   th:text="${#numbers.formatDecimal(pg.importeAsignado, 1, 2) + ' €'}">0 €</span>
                                         </td>
                                         <td class="text-muted small">Pendiente</td>
@@ -208,13 +210,12 @@
                 </div>
 
                 <!-- ══════════════════════════════════════════════════════════
-                     SECCIÓN 3: Historial de gastos
+                     SECCIÓN 3: Historial de gastos (últimos 10)
                      ══════════════════════════════════════════════════════════ -->
                 <div class="card" id="historial">
                     <div class="card-header fw-semibold">
-                        🧾 Historial de gastos
-                        <span class="badge bg-secondary ms-1"
-                              th:text="${#lists.size(historial)}">0</span>
+                        <i class="bi bi-receipt me-1"></i> Historial de gastos
+                        <small class="text-muted fw-normal ms-1">Últimos 10</small>
                     </div>
 
                     <!-- Sin gastos -->
@@ -222,126 +223,120 @@
                         Aún no hay gastos registrados. Pulsa «Registrar gasto» para empezar.
                     </div>
 
-                    <!-- Accordion de gastos -->
-                    <div th:unless="${#lists.isEmpty(historial)}"
-                         class="accordion accordion-flush" id="accordion-gastos">
+                    <!-- Tabla de historial -->
+                    <div th:unless="${#lists.isEmpty(historial)}" class="card-body p-0">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th>Concepto</th>
+                                    <th>Fecha</th>
+                                    <th>Pagador</th>
+                                    <th class="text-end">Total</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <th:block th:each="gd : ${historial}">
 
-                        <div class="accordion-item" th:each="gd : ${historial}">
-
-                            <!-- Cabecera del acordeón -->
-                            <h2 class="accordion-header" th:id="'h-' + ${gd.gasto.id}">
-                                <button class="accordion-button collapsed py-2"
-                                        type="button"
+                                    <!-- Fila resumen: click para desplegar detalle -->
+                                    <tr class="hist-row-summary"
                                         data-bs-toggle="collapse"
-                                        th:attr="data-bs-target='#d-' + ${gd.gasto.id},
-                                                  aria-controls='d-' + ${gd.gasto.id}">
+                                        aria-expanded="false"
+                                        th:attr="data-bs-target='#det-' + ${gd.gasto.id}">
+                                        <td class="fw-semibold">
+                                            <i class="bi bi-chevron-right hist-chevron me-1 text-muted"></i>
+                                            <span th:text="${gd.gasto.concepto}">Concepto</span>
+                                        </td>
+                                        <td class="text-muted small" th:text="${gd.gasto.fecha}">fecha</td>
+                                        <td class="small">
+                                            <span th:text="${gd.gasto.pagador.firstName + ' ' + gd.gasto.pagador.lastName}">nombre</span>
+                                            <small class="text-muted ms-1"
+                                                   th:text="${'@' + gd.gasto.pagador.username}">@u</small>
+                                        </td>
+                                        <td class="text-end fw-semibold"
+                                            th:text="${#numbers.formatDecimal(gd.gasto.importe, 1, 2) + ' €'}">0 €</td>
+                                        <td>
+                                            <span th:classappend="${gd.gasto.estado.name() == 'PENDIENTE'} ? 'text-warning fw-semibold' : 'text-success fw-semibold'"
+                                                  th:text="${gd.gasto.estado.name() == 'PENDIENTE'} ? 'Pendiente' : 'Liquidado'">
+                                            </span>
+                                            <span th:if="${gd.importePendiente().compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+                                                  class="text-danger small ms-2"
+                                                  th:text="${#numbers.formatDecimal(gd.importePendiente(), 1, 2) + ' € pend.'}">
+                                            </span>
+                                        </td>
+                                    </tr>
 
-                                    <span class="fw-semibold me-2"
-                                          th:text="${gd.gasto.concepto}">Concepto</span>
-                                    <span class="badge bg-primary me-2"
-                                          th:text="${#numbers.formatDecimal(gd.gasto.importe, 1, 2) + ' €'}">0 €</span>
-                                    <span class="text-muted small me-2"
-                                          th:text="${gd.gasto.fecha}">fecha</span>
-                                    <span class="badge me-1"
-                                          th:classappend="${gd.gasto.estado.name() == 'PENDIENTE'} ? 'bg-warning text-dark' : 'bg-success'"
-                                          th:text="${gd.gasto.estado}">ESTADO</span>
+                                    <!-- Fila detalle desplegable -->
+                                    <tr class="hist-detail">
+                                        <td colspan="5">
+                                            <div class="collapse border-start border-3 border-primary"
+                                                 th:id="'det-' + ${gd.gasto.id}">
+                                                <div class="px-4 py-3">
 
-                                    <!--
-                                        importePendiente() ya excluye la participación del pagador,
-                                        por lo que este importe coincide con lo que muestran el
-                                        balance y las operaciones pendientes.
-                                    -->
-                                    <span th:if="${gd.importePendiente().compareTo(T(java.math.BigDecimal).ZERO) > 0}"
-                                          class="badge bg-danger ms-1"
-                                          th:text="${#numbers.formatDecimal(gd.importePendiente(), 1, 2) + ' € pendiente'}">
-                                    </span>
+                                                    <!-- Línea de contexto -->
+                                                    <p class="small text-muted mb-3">
+                                                        Pagado por
+                                                        <strong th:text="${gd.gasto.pagador.firstName + ' ' + gd.gasto.pagador.lastName}">nombre</strong>
+                                                        <span th:text="${'(@' + gd.gasto.pagador.username + ')'}">@u</span>
+                                                        &nbsp;·&nbsp; Total:
+                                                        <strong th:text="${#numbers.formatDecimal(gd.gasto.importe, 1, 2) + ' €'}">0 €</strong>
+                                                    </p>
 
-                                </button>
-                            </h2>
+                                                    <!-- Tabla de participantes -->
+                                                    <table class="table table-hover align-middle mb-0"
+                                                           th:if="${not #lists.isEmpty(gd.participantes)}">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th class="small text-muted fw-semibold">Participante</th>
+                                                                <th class="small text-muted fw-semibold text-end">Asignado</th>
+                                                                <th class="small text-muted fw-semibold">Estado</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr th:each="pg : ${gd.participantes}"
+                                                                th:classappend="${u != null and pg.usuario.id == u.id} ? 'fw-semibold' : ''">
+                                                                <td>
+                                                                    <span th:text="${pg.usuario.firstName + ' ' + pg.usuario.lastName}">nombre</span>
+                                                                    <small class="text-muted ms-1"
+                                                                           th:text="${'@' + pg.usuario.username}">@u</small>
+                                                                    <span th:if="${pg.usuario.id == gd.gasto.pagador.id}"
+                                                                          class="badge bg-light text-dark border ms-1 small">pagador</span>
+                                                                </td>
+                                                                <td class="text-end fw-semibold"
+                                                                    th:text="${#numbers.formatDecimal(pg.importeAsignado, 1, 2) + ' €'}">0 €</td>
+                                                                <td>
+                                                                    <span th:if="${pg.pagado}"
+                                                                          class="text-success fw-semibold small">Pagado</span>
+                                                                    <button th:if="${not pg.pagado
+                                                                                    and u != null
+                                                                                    and pg.usuario.id == u.id
+                                                                                    and pg.gasto.pagador.id != u.id}"
+                                                                            class="btn btn-sm btn-outline-success pagar-parte"
+                                                                            th:attr="data-pg-id=${pg.id}">
+                                                                        Pagar mi parte
+                                                                    </button>
+                                                                    <span th:if="${not pg.pagado
+                                                                                  and u != null
+                                                                                  and pg.usuario.id == u.id
+                                                                                  and pg.gasto.pagador.id == u.id}"
+                                                                          class="text-muted small">Pagador</span>
+                                                                    <span th:if="${not pg.pagado and (u == null or pg.usuario.id != u.id)}"
+                                                                          class="text-warning fw-semibold small">Pendiente</span>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
 
-                            <!-- Cuerpo del acordeón -->
-                            <div th:id="'d-' + ${gd.gasto.id}"
-                                 class="accordion-collapse collapse"
-                                 th:attr="aria-labelledby='h-' + ${gd.gasto.id}">
-                                <div class="accordion-body pt-2 pb-3">
+                                                    <p th:if="${#lists.isEmpty(gd.participantes)}"
+                                                       class="text-muted small mb-0">Sin participantes registrados.</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
 
-                                    <p class="text-muted small mb-2">
-                                        <strong>Pagador:</strong>
-                                        <span th:text="${gd.gasto.pagador.firstName + ' ' + gd.gasto.pagador.lastName}">nombre</span>
-                                        <span th:text="${'(@' + gd.gasto.pagador.username + ')'}">@u</span>
-                                        &nbsp;·&nbsp;
-                                        <strong>Fecha:</strong> <span th:text="${gd.gasto.fecha}">fecha</span>
-                                        &nbsp;·&nbsp;
-                                        <strong>Total:</strong>
-                                        <span th:text="${#numbers.formatDecimal(gd.gasto.importe, 1, 2) + ' €'}">0 €</span>
-                                    </p>
-
-                                    <table class="table table-sm align-middle mb-0"
-                                           th:if="${not #lists.isEmpty(gd.participantes)}">
-                                        <thead class="table-light small">
-                                            <tr>
-                                                <th>Participante</th>
-                                                <th class="text-end">Asignado</th>
-                                                <th>Estado</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr th:each="pg : ${gd.participantes}"
-                                                th:classappend="${u != null and pg.usuario.id == u.id} ? 'table-light fw-semibold' : ''">
-                                                <td>
-                                                    <span th:text="${pg.usuario.firstName + ' ' + pg.usuario.lastName}">nombre</span>
-                                                    <small class="text-muted ms-1"
-                                                           th:text="${'@' + pg.usuario.username}">@u</small>
-                                                    <!-- Indicador del pagador del gasto -->
-                                                    <span th:if="${pg.usuario.id == gd.gasto.pagador.id}"
-                                                          class="badge bg-info text-dark ms-1 small">pagador</span>
-                                                </td>
-                                                <td class="text-end"
-                                                    th:text="${#numbers.formatDecimal(pg.importeAsignado, 1, 2) + ' €'}">0 €</td>
-                                                <td>
-                                                    <!-- Pagado -->
-                                                    <span th:if="${pg.pagado}"
-                                                          class="badge bg-success">Pagado</span>
-
-                                                    <!--
-                                                        Pendiente + soy yo + NO soy el pagador del gasto
-                                                        → botón de acción real.
-                                                        Si soy el pagador, mi "deuda" es con el piso, no
-                                                        con ningún otro miembro: no hay que mostrar el botón.
-                                                    -->
-                                                    <button th:if="${not pg.pagado
-                                                                    and u != null
-                                                                    and pg.usuario.id == u.id
-                                                                    and pg.gasto.pagador.id != u.id}"
-                                                            class="btn btn-sm btn-outline-success pagar-parte"
-                                                            th:attr="data-pg-id=${pg.id}">
-                                                        Pagar mi parte
-                                                    </button>
-
-                                                    <!-- Pendiente: soy el pagador (mi parte está implícitamente saldada) -->
-                                                    <span th:if="${not pg.pagado
-                                                                  and u != null
-                                                                  and pg.usuario.id == u.id
-                                                                  and pg.gasto.pagador.id == u.id}"
-                                                          class="badge bg-secondary">
-                                                        Pagador — saldado
-                                                    </span>
-
-                                                    <!-- Pendiente: otro usuario distinto de mí -->
-                                                    <span th:if="${not pg.pagado and (u == null or pg.usuario.id != u.id)}"
-                                                          class="badge bg-warning text-dark">Pendiente</span>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-
-                                    <p th:if="${#lists.isEmpty(gd.participantes)}"
-                                       class="text-muted small mb-0">Sin participantes registrados.</p>
-
-                                </div>
-                            </div>
-                        </div>
-
+                                </th:block>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -360,10 +355,6 @@
                 </div>
                 <form th:action="@{/modulos/gastos}" method="post">
                     <div class="modal-body">
-                        <p class="text-muted small mb-3">
-                            El importe se repartirá a partes iguales entre todos los miembros activos del piso.
-                            Tú quedas registrado como pagador.
-                        </p>
                         <div class="mb-3">
                             <label for="concepto" class="form-label">Concepto <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="concepto" name="concepto"
@@ -373,6 +364,29 @@
                             <label for="importe" class="form-label">Importe total (€) <span class="text-danger">*</span></label>
                             <input type="number" step="0.01" min="0.01" class="form-control"
                                    id="importe" name="importe" placeholder="0.00" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Participantes <span class="text-danger">*</span></label>
+                            <div class="text-muted small mb-2">
+                                Selecciona a quién afecta este gasto. Si no marcas a nadie, se reparte entre todos.
+                            </div>
+                            <div class="row g-1" th:if="${miembros != null}">
+                                <div class="col-6" th:each="mp : ${miembros}">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input"
+                                               name="participanteIds"
+                                               th:value="${mp.usuario.id}"
+                                               th:id="'chk-' + ${mp.usuario.id}"
+                                               checked>
+                                        <label class="form-check-label small"
+                                               th:for="'chk-' + ${mp.usuario.id}">
+                                            <span th:text="${mp.usuario.firstName + ' ' + mp.usuario.lastName}">nombre</span>
+                                            <small class="text-muted"
+                                                   th:text="${'@' + mp.usuario.username}">@u</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -389,7 +403,8 @@
     <!-- AJAX: pagar participación → reload para mantener UI coherente -->
     <script th:if="${piso}">
         document.querySelectorAll('.pagar-parte').forEach(function (btn) {
-            btn.addEventListener('click', function () {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
                 this.disabled = true;
                 go('/modulos/gastos/participante/' + this.dataset.pgId + '/pagar', 'POST')
                     .then(function () { location.reload(); })

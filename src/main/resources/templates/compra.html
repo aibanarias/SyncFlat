@@ -83,10 +83,7 @@
                 <!-- ============================================================
                      SECCIÓN 1 — LISTAS ACTIVAS
                      ============================================================ -->
-                <h3 class="mt-2 d-flex align-items-center gap-2">
-                    Listas activas
-                    <span class="badge bg-primary" th:text="${#lists.size(listasActivas)}">0</span>
-                </h3>
+                <h3 class="mt-2">Listas activas</h3>
 
                 <th:block th:each="lista : ${listasActivas}">
                     <div class="card mb-4 border-primary">
@@ -98,11 +95,11 @@
                             <span>
                                 <!-- Participantes de la lista -->
                                 <span th:if="${#lists.isEmpty(lista.participantes)}"
-                                      class="badge bg-secondary me-1">Todos los miembros</span>
-                                <span th:each="p : ${lista.participantes}"
-                                      class="badge bg-info text-dark me-1"
-                                      th:text="${p.firstName}">Ana</span>
-                                <span class="badge bg-primary ms-1">Activa</span>
+                                      class="text-muted small me-1">Todos</span>
+                                <span th:each="p,i : ${lista.participantes}"
+                                      class="text-muted small"
+                                      th:text="${p.firstName + (i.last ? '' : ', ')}">Ana</span>
+                                <span class="text-primary small fw-semibold ms-2">Activa</span>
                             </span>
                         </div>
 
@@ -130,10 +127,7 @@
                                         <td th:text="${item.producto.nombre}"
                                             th:classappend="${item.comprado} ? 'text-decoration-line-through text-muted' : ''">
                                             Producto</td>
-                                        <td>
-                                            <span class="badge bg-light text-dark border"
-                                                  th:text="${item.producto.categoria}">Cat</span>
-                                        </td>
+                                        <td class="text-muted small" th:text="${item.producto.categoria}">Cat</td>
                                         <td th:text="${item.cantidad}">1</td>
                                         <td th:text="${item.solicitadoPor.username}">usr</td>
                                     </tr>
@@ -202,10 +196,7 @@
                 <!-- ============================================================
                      SECCIÓN 2 — HISTORIAL DE COMPRAS
                      ============================================================ -->
-                <h3 class="mt-5 d-flex align-items-center gap-2">
-                    Historial de compras
-                    <span class="badge bg-success" th:text="${#lists.size(historialCompras)}">0</span>
-                </h3>
+                <h3 class="mt-5">Historial de compras</h3>
                 <p class="text-muted small mb-3">
                     Compras cerradas. Expande cada entrada para ver los ítems comprados y los participantes.
                 </p>
@@ -305,10 +296,7 @@
                                         <tbody>
                                             <tr th:each="item : ${cd.itemsComprados}">
                                                 <td th:text="${item.producto.nombre}">Producto</td>
-                                                <td>
-                                                    <span class="badge bg-light text-dark border"
-                                                          th:text="${item.producto.categoria}">Cat</span>
-                                                </td>
+                                                <td class="text-muted small" th:text="${item.producto.categoria}">Cat</td>
                                                 <td th:text="${item.cantidad}">1</td>
                                             </tr>
                                         </tbody>

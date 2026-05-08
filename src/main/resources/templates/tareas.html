@@ -79,7 +79,7 @@
                 <!-- ============================================================
                      SECCIÓN 1 — PENDIENTES
                      ============================================================ -->
-                <h3 class="mt-4 d-flex align-items-center gap-2">
+                <h3 class="mt-4 d-flex align-items-center gap-2 border-start border-3 border-primary ps-3">
                     Tareas por hacer
                     <span class="badge bg-secondary"
                           th:text="${#lists.size(pendientes) + #lists.size(sinAsignar)}">0</span>
@@ -87,7 +87,7 @@
 
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
-                        <thead class="table-dark">
+                        <thead class="table-light">
                             <tr>
                                 <th>Tarea</th>
                                 <th>Tipo</th>
@@ -147,7 +147,7 @@
                 <!-- ============================================================
                      SECCIÓN 2 — COMPLETADAS, PENDIENTES DE VALIDAR
                      ============================================================ -->
-                <h3 class="mt-5 d-flex align-items-center gap-2">
+                <h3 class="mt-5 d-flex align-items-center gap-2 border-start border-3 border-warning ps-3">
                     Realizadas — pendientes de validar
                     <span class="badge bg-warning text-dark"
                           th:text="${#lists.size(pendientesDeValidar)}">0</span>
@@ -161,11 +161,11 @@
                         <thead class="table-warning">
                             <tr>
                                 <th>Tarea</th>
-                                <th>Tipo</th>
-                                <th>Responsable</th>
-                                <th>Completada el</th>
-                                <th>Fecha límite</th>
-                                <th>Acciones</th>
+                                <th style="width:9rem">Tipo</th>
+                                <th style="width:11rem">Responsable</th>
+                                <th style="width:8rem">Completada el</th>
+                                <th style="width:8rem">Fecha límite</th>
+                                <th style="width:13rem">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -183,27 +183,32 @@
                                     </span>
                                 </td>
                                 <td th:text="${at.usuario.firstName + ' ' + at.usuario.lastName}">Miembro</td>
+                                <td class="small" th:text="${at.fechaCompletada}">fecha</td>
                                 <td>
-                                    <span class="badge bg-success" th:text="${at.fechaCompletada}">fecha</span>
-                                </td>
-                                <td th:text="${at.tarea.fechaLimite}">fecha</td>
-                                <td class="d-flex gap-1 flex-wrap">
-                                    <!-- Reabrir: cualquier miembro puede reabrir mientras no esté validada -->
-                                    <button class="btn btn-sm btn-outline-secondary completar-tarea"
-                                            th:data-id="${at.id}">
-                                        Reabrir
-                                    </button>
-                                    <!-- Validar: solo quien NO sea el asignado -->
-                                    <button th:if="${at.usuario.id != usuarioActualId}"
-                                            class="btn btn-sm btn-primary validar-tarea"
-                                            th:data-id="${at.id}">
-                                        Validar
-                                    </button>
-                                    <span th:unless="${at.usuario.id != usuarioActualId}"
-                                          class="text-muted small align-self-center"
-                                          title="No puedes validar tu propia tarea">
-                                        (tú la realizaste)
+                                    <span th:text="${at.tarea.fechaLimite}"
+                                          th:classappend="${at.tarea.fechaLimite != null and at.tarea.fechaLimite.isBefore(#temporals.createToday())} ? 'text-danger fw-semibold' : 'small'">
+                                        fecha
                                     </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1 flex-wrap">
+                                        <!-- Reabrir: cualquier miembro puede reabrir mientras no esté validada -->
+                                        <button class="btn btn-sm btn-outline-secondary completar-tarea"
+                                                th:data-id="${at.id}">
+                                            Reabrir
+                                        </button>
+                                        <!-- Validar: solo quien NO sea el asignado -->
+                                        <button th:if="${at.usuario.id != usuarioActualId}"
+                                                class="btn btn-sm btn-primary validar-tarea"
+                                                th:data-id="${at.id}">
+                                            Validar
+                                        </button>
+                                        <span th:unless="${at.usuario.id != usuarioActualId}"
+                                              class="text-muted small align-self-center"
+                                              title="No puedes validar tu propia tarea">
+                                            (tú la realizaste)
+                                        </span>
+                                    </div>
                                 </td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(pendientesDeValidar)}">
@@ -216,9 +221,8 @@
                 <!-- ============================================================
                      SECCIÓN 3 — VALIDADAS
                      ============================================================ -->
-                <h3 class="mt-5 d-flex align-items-center gap-2">
+                <h3 class="mt-5 d-flex align-items-center gap-2 border-start border-3 border-success ps-3">
                     Validadas
-                    <span class="badge bg-success" th:text="${#lists.size(validadas)}">0</span>
                 </h3>
 
                 <div class="table-responsive">
@@ -247,13 +251,13 @@
                                     </span>
                                 </td>
                                 <td th:text="${at.usuario.firstName + ' ' + at.usuario.lastName}">Miembro</td>
+                                <td class="small" th:text="${at.fechaCompletada}">fecha</td>
                                 <td>
-                                    <span class="badge bg-success" th:text="${at.fechaCompletada}">fecha</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-primary"
-                                          th:if="${at.validador != null}"
-                                          th:text="${at.validador.username}">validador</span>
+                                    <span th:if="${at.validador != null}"
+                                          th:text="${at.validador.firstName + ' ' + at.validador.lastName}">validador</span>
+                                    <small class="text-muted ms-1"
+                                           th:if="${at.validador != null}"
+                                           th:text="${'@' + at.validador.username}">@u</small>
                                 </td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(validadas)}">

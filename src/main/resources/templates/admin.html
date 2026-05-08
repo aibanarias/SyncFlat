@@ -10,48 +10,42 @@
     <header th:replace="~{fragments/nav.html :: nav}"></header>
 
     <main class="flex-shrink-0">
-        <div class="container">
-            <h1 class="mt-5">Administración</h1>
-        </div>
-        <div class="container">
-            <h1 class="mt-5">Usuarios</h1>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Id</th>
-                        <th>Username</th>
-                        <th>Nombre &amp; Apellidos</th>
-                        <th>Roles</th>
-                        <th>Grupos</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="user : ${users}">
-                        <td th:text="${user.id}">1</td>
-                        <td th:text="${user.username}">paco</td>
-                        <td th:text="${user.firstName + ' ' + user.lastName}">Nombre</td>
-                        <td>
-                            <ul>
-                                <li th:text="${user.roles}">Role</li>
-                            </ul>
-                        </td>
-                        <td>
-                          <ul>
-                              <li th:text="${user.groups}">Role</li>
-                          </ul>
-                      </td>
-                      <td>
-                            <form th:action="@{'/admin/toggle/' + ${user.id}}" th:method="post">
-                                <button th:if="${user.enabled}" type="submit"
-                                    class="toggle btn btn-danger">Deshabilitar</button>
-                                <button th:unless="${user.enabled}" type="submit"
-                                    class="toggle btn btn-primary">Habilitar</button>
-                            </form>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="container mt-4">
+            <h1 class="mb-4">Administración</h1>
+            <h2 class="mb-3">Usuarios</h2>
+            <div class="card">
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Id</th>
+                                <th>Username</th>
+                                <th>Nombre</th>
+                                <th>Roles</th>
+                                <th>Grupos</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="user : ${users}">
+                                <td class="text-muted small" th:text="${user.id}">1</td>
+                                <td th:text="${user.username}">paco</td>
+                                <td th:text="${user.firstName + ' ' + user.lastName}">Nombre</td>
+                                <td class="small" th:text="${user.roles}">Role</td>
+                                <td class="small" th:text="${user.groups}">Grupo</td>
+                                <td>
+                                    <form th:action="@{'/admin/toggle/' + ${user.id}}" th:method="post">
+                                        <button th:if="${user.enabled}" type="submit"
+                                            class="toggle btn btn-sm btn-outline-danger">Deshabilitar</button>
+                                        <button th:unless="${user.enabled}" type="submit"
+                                            class="toggle btn btn-sm btn-outline-primary">Habilitar</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
 

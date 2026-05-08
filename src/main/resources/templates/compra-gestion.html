@@ -67,38 +67,42 @@
                     </div>
 
                     <!-- Listas existentes -->
-                    <h5>Listas del piso</h5>
-                    <table class="table table-sm">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Fecha</th>
-                                <th>Participantes</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="l : ${listas}">
-                                <td>
-                                    <a th:href="@{/modulos/compra}" th:text="${l.nombre}">Lista</a>
-                                </td>
-                                <td th:text="${l.fechaCreacion}">fecha</td>
-                                <td class="small">
-                                    <span th:if="${#lists.isEmpty(l.participantes)}"
-                                          class="text-muted">Todos</span>
-                                    <span th:each="p,stat : ${l.participantes}"
-                                          th:text="${p.firstName + (stat.last ? '' : ', ')}">Ana</span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-success" th:if="${l.completada}">Cerrada</span>
-                                    <span class="badge bg-primary" th:unless="${l.completada}">Activa</span>
-                                </td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(listas)}">
-                                <td colspan="4" class="text-muted text-center">No hay listas creadas.</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="card">
+                        <div class="card-header fw-semibold">Listas del piso</div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Fecha</th>
+                                        <th>Participantes</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="l : ${listas}">
+                                        <td>
+                                            <a th:href="@{/modulos/compra}" th:text="${l.nombre}">Lista</a>
+                                        </td>
+                                        <td class="text-muted small" th:text="${l.fechaCreacion}">fecha</td>
+                                        <td class="small">
+                                            <span th:if="${#lists.isEmpty(l.participantes)}"
+                                                  class="text-muted">Todos</span>
+                                            <span th:each="p,stat : ${l.participantes}"
+                                                  th:text="${p.firstName + (stat.last ? '' : ', ')}">Ana</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success" th:if="${l.completada}">Cerrada</span>
+                                            <span class="badge bg-primary" th:unless="${l.completada}">Activa</span>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(listas)}">
+                                        <td colspan="4" class="text-muted text-center py-2">No hay listas creadas.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ══════════════════════════════════════════════════════
@@ -127,26 +131,28 @@
                         </div>
                     </div>
 
-                    <h5>Catálogo del piso</h5>
-                    <table class="table table-sm">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Producto</th>
-                                <th>Categoría</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="p : ${productos}">
-                                <td th:text="${p.nombre}">Producto</td>
-                                <td>
-                                    <span class="badge bg-light text-dark border" th:text="${p.categoria}">Cat</span>
-                                </td>
-                            </tr>
-                            <tr th:if="${#lists.isEmpty(productos)}">
-                                <td colspan="2" class="text-muted text-center">El catálogo está vacío.</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="card">
+                        <div class="card-header fw-semibold">Catálogo del piso</div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Categoría</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="p : ${productos}">
+                                        <td th:text="${p.nombre}">Producto</td>
+                                        <td class="text-muted small" th:text="${p.categoria}">Cat</td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(productos)}">
+                                        <td colspan="2" class="text-muted text-center py-2">El catálogo está vacío.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
             </div>

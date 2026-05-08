@@ -45,7 +45,7 @@
 
                         <div class="card mb-3">
                             <div class="card-header small fw-semibold py-2">
-                                🏠 <span th:text="${piso.nombre}">Piso</span>
+                                <i class="bi bi-house me-1"></i><span th:text="${piso.nombre}">Piso</span>
                             </div>
                             <div class="card-body p-2">
                                 <p class="small text-muted mb-2">Filtrar personas:</p>
@@ -84,7 +84,10 @@
                                 <!-- Los puntos de color se insertan por JS con el color de cada usuario -->
                                 <div id="leyenda-usuarios"></div>
                                 <p class="text-muted mt-1 mb-0" style="font-size:0.7rem">
-                                    💼 Trabajo &nbsp; 📚 Clases &nbsp; 🏃 Entrenamiento &nbsp; 📌 Otro
+                                    <i class="bi bi-briefcase"></i> Trabajo &nbsp;
+                                <i class="bi bi-book"></i> Clases &nbsp;
+                                <i class="bi bi-activity"></i> Entrenamiento &nbsp;
+                                <i class="bi bi-pin-angle"></i> Otro
                                 </p>
                             </div>
                         </div>
@@ -118,13 +121,13 @@
                         <li class="nav-item">
                             <button class="nav-link active" id="tab-btn-evento"
                                     data-bs-toggle="tab" data-bs-target="#tab-evento" data-tab="evento">
-                                🗓 Evento del piso
+                                <i class="bi bi-calendar-event me-1"></i> Evento del piso
                             </button>
                         </li>
                         <li class="nav-item">
                             <button class="nav-link" id="tab-btn-bloque"
                                     data-bs-toggle="tab" data-bs-target="#tab-bloque" data-tab="bloque">
-                                📌 Mi bloque personal
+                                <i class="bi bi-pin-angle me-1"></i> Mi bloque personal
                             </button>
                         </li>
                     </ul>
@@ -183,10 +186,10 @@
                             <div class="mb-2">
                                 <label class="form-label small fw-semibold">Tipo <span class="text-danger">*</span></label>
                                 <select id="bl-tipo" class="form-select">
-                                    <option value="TRABAJO">💼 Trabajo</option>
-                                    <option value="CLASES">📚 Clases</option>
-                                    <option value="ENTRENAMIENTO">🏃 Entrenamiento</option>
-                                    <option value="OTRO">📌 Otro (especifica abajo)</option>
+                                    <option value="TRABAJO">Trabajo</option>
+                                    <option value="CLASES">Clases</option>
+                                    <option value="ENTRENAMIENTO">Entrenamiento</option>
+                                    <option value="OTRO">Otro (especifica abajo)</option>
                                 </select>
                             </div>
                             <div class="mb-2">
@@ -433,12 +436,11 @@
                 if (p.tipo === 'EVENTO') {
                     let tip = info.event.title.replace(/^[⏳✅❌] /, '');
                     if (p.descripcion) tip += '\n' + p.descripcion;
-                    if (p.tipoRecurrencia && p.tipoRecurrencia !== 'NINGUNA') tip += ' 🔁';
+                    if (p.tipoRecurrencia && p.tipoRecurrencia !== 'NINGUNA') tip += ' (recurrente)';
                     info.el.title = tip;
                 } else {
-                    // El título ya incluye nombre + emoji + descripción, solo añadir recurrencia
                     info.el.title = info.event.title
-                        + (p.tipoRecurrencia && p.tipoRecurrencia !== 'NINGUNA' ? ' 🔁' : '');
+                        + (p.tipoRecurrencia && p.tipoRecurrencia !== 'NINGUNA' ? ' (recurrente)' : '');
                 }
             }
         });
@@ -522,10 +524,7 @@
         ];
         function colorUsuario(id) { return PALETA_BLOQUES[Math.abs(id) % PALETA_BLOQUES.length]; }
 
-        /* Emojis por tipo de bloque (solo para labels en modal/conflictos) */
-        const EMOJI_TIPO_JS = { TRABAJO: '💼', CLASES: '📚', ENTRENAMIENTO: '🏃', OTRO: '📌' };
-
-        const TEXTO_ASIST = { CONFIRMADO: 'Asistiré ✅', RECHAZADO: 'No asistiré ❌', PENDIENTE: 'Pendiente ⏳', SIN_RESPONDER: 'Sin confirmar' };
+        const TEXTO_ASIST = { CONFIRMADO: 'Asistiré', RECHAZADO: 'No asistiré', PENDIENTE: 'Pendiente', SIN_RESPONDER: 'Sin confirmar' };
         const CLASE_ASIST = { CONFIRMADO: 'btn-success', RECHAZADO: 'btn-outline-danger', PENDIENTE: 'btn-outline-secondary', SIN_RESPONDER: 'btn-outline-secondary' };
 
         function fmtDt(s) { return s ? s.replace('T', ' ').substring(0, 16) : '—'; }
@@ -533,7 +532,7 @@
         function recBadge(p) {
             if (!p.tipoRecurrencia || p.tipoRecurrencia === 'NINGUNA') return '';
             const txt = { DIARIA: 'diaria', SEMANAL: 'semanal', MENSUAL: 'mensual', PERSONALIZADA: 'personalizada' };
-            return `<span class="badge bg-secondary ms-1 small">🔁 ${txt[p.tipoRecurrencia] || p.tipoRecurrencia}</span>`;
+            return `<span class="badge bg-secondary ms-1 small">${txt[p.tipoRecurrencia] || p.tipoRecurrencia}</span>`;
         }
 
         /* Agrupa la lista completa de asistencias en tres bloques visuales */
@@ -549,11 +548,11 @@
             let html = '<div class="border-top mt-2 pt-2">';
             html += '<p class="small fw-semibold mb-1">Asistencia del piso</p>';
             if (grupos.CONFIRMADO.length)
-                html += `<div class="small mb-1"><span class="text-success fw-semibold">✅ Asistirán:</span> ${grupos.CONFIRMADO.join(', ')}</div>`;
+                html += `<div class="small mb-1"><span class="text-success fw-semibold">Asistirán:</span> ${grupos.CONFIRMADO.join(', ')}</div>`;
             if (grupos.RECHAZADO.length)
-                html += `<div class="small mb-1"><span class="text-danger fw-semibold">❌ No asisten:</span> ${grupos.RECHAZADO.join(', ')}</div>`;
+                html += `<div class="small mb-1"><span class="text-danger fw-semibold">No asisten:</span> ${grupos.RECHAZADO.join(', ')}</div>`;
             if (grupos.pendientes.length)
-                html += `<div class="small mb-1"><span class="text-muted fw-semibold">⏳ Sin confirmar:</span> ${grupos.pendientes.join(', ')}</div>`;
+                html += `<div class="small mb-1"><span class="text-muted fw-semibold">Sin confirmar:</span> ${grupos.pendientes.join(', ')}</div>`;
             html += '</div>';
             return html;
         }
@@ -585,9 +584,9 @@
 
                 if (p.estado === 'PROPUESTO') {
                     acciones.innerHTML = `
-                        <button class="btn btn-sm btn-success" id="d-aprobar">✅ Aprobar</button>
-                        <button class="btn btn-sm btn-outline-danger" id="d-rechazar">❌ Rechazar</button>
-                        <button class="btn btn-sm btn-outline-warning ms-auto" id="d-conflictos">⚠ Ver conflictos</button>`;
+                        <button class="btn btn-sm btn-success" id="d-aprobar">Aprobar</button>
+                        <button class="btn btn-sm btn-outline-danger" id="d-rechazar">Rechazar</button>
+                        <button class="btn btn-sm btn-outline-secondary ms-auto" id="d-conflictos">Ver conflictos</button>`;
                     document.getElementById('d-aprobar').addEventListener('click', () =>
                         go('/modulos/calendario/evento/' + p.eventoId + '/aprobar', 'POST')
                             .then(() => { modalDetalle.hide(); calendar.refetchEvents(); }).catch(console.error));
@@ -601,7 +600,7 @@
                         <button class="btn btn-sm ${CLASE_ASIST[miAsist]}" id="d-asistencia">
                             ${TEXTO_ASIST[miAsist]}</button>
                         <button class="btn btn-sm btn-outline-danger" id="d-rechazar">Cancelar evento</button>
-                        <button class="btn btn-sm btn-outline-warning ms-auto" id="d-conflictos">⚠ Ver conflictos</button>`;
+                        <button class="btn btn-sm btn-outline-secondary ms-auto" id="d-conflictos">Ver conflictos</button>`;
 
                     /* AJAX + reload: garantiza que la lista de asistencias siempre está actualizada */
                     document.getElementById('d-asistencia').addEventListener('click', function () {
@@ -616,7 +615,7 @@
 
                 } else {
                     acciones.innerHTML = `
-                        <button class="btn btn-sm btn-outline-secondary" id="d-reabrir">↩ Reabrir propuesta</button>`;
+                        <button class="btn btn-sm btn-outline-secondary" id="d-reabrir">Reabrir propuesta</button>`;
                     document.getElementById('d-reabrir').addEventListener('click', () =>
                         go('/modulos/calendario/evento/' + p.eventoId + '/reabrir', 'POST')
                             .then(() => { modalDetalle.hide(); calendar.refetchEvents(); }).catch(console.error));
@@ -631,15 +630,14 @@
                                 const panel = document.getElementById('conflictos-detalle-panel');
                                 this.style.display = 'none';
                                 if (!resp.data.length) {
-                                    panel.innerHTML = '<span class="badge bg-success">✓ Sin conflictos</span>';
+                                    panel.innerHTML = '<span class="text-success fw-semibold small">Sin conflictos</span>';
                                 } else {
-                                    let html = '<div class="small fw-semibold text-danger mb-1">⚠ Conflictos detectados</div>';
+                                    let html = '<div class="small fw-semibold text-danger mb-1">Conflictos detectados</div>';
                                     resp.data.forEach(c => {
-                                        const col   = colorUsuario(c.usuarioId);
-                                        const emoji = EMOJI_TIPO_JS[c.tipo] || '📌';
+                                        const col = colorUsuario(c.usuarioId);
                                         html += `<div class="ps-2 mb-1 small" style="border-left:3px solid ${col}">
                                             <strong style="color:${col}">${c.nombre || ('@' + c.usuario)}</strong>
-                                            <span class="badge text-white ms-1" style="background:${col}">${emoji} ${c.tipo}</span>
+                                            <span class="badge text-white ms-1" style="background:${col}">${c.tipo}</span>
                                             ${c.descripcion ? ' ' + c.descripcion : ''}
                                             <span class="text-muted">(${c.inicio.substring(11,16)}–${c.fin.substring(11,16)})</span>
                                         </div>`;
@@ -647,16 +645,15 @@
                                     panel.innerHTML = html;
                                 }
                             })
-                            .catch(() => { this.disabled = false; this.textContent = '⚠ Ver conflictos'; });
+                            .catch(() => { this.disabled = false; this.textContent = 'Ver conflictos'; });
                     });
                 }
 
             } else { // BLOQUE
                 const col     = p.color || colorUsuario(p.propietarioId);
-                const emoji   = EMOJI_TIPO_JS[p.tipoBloque] || '📌';
-                const tipoBadge = `<span class="badge text-white ms-1" style="background:${col}">${emoji} ${p.tipoBloque}</span>`;
+                const tipoBadge = `<span class="badge text-white ms-1" style="background:${col}">${p.tipoBloque}</span>`;
                 const recBadgeBloque = p.tipoRecurrencia && p.tipoRecurrencia !== 'NINGUNA'
-                    ? `<span class="badge bg-secondary ms-1">🔁 ${p.tipoRecurrencia.toLowerCase()}</span>` : '';
+                    ? `<span class="badge bg-secondary ms-1">${p.tipoRecurrencia.toLowerCase()}</span>` : '';
                 body.innerHTML = `
                     <div class="d-flex align-items-center gap-2 mb-3">
                         <span style="width:14px;height:14px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span>

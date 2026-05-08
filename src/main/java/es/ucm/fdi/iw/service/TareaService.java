@@ -92,7 +92,7 @@ public class TareaService {
             .getResultList();
     }
 
-    /** Asignaciones validadas, ordenadas por fecha de completado. */
+    /** Últimas 10 asignaciones validadas del piso, ordenadas por fecha de completado descendente. */
     @Transactional(readOnly = true)
     public List<AsignacionTarea> obtenerValidadas(long pisoId) {
         return entityManager
@@ -101,6 +101,7 @@ public class TareaService {
                 + " AND at.validada = true ORDER BY at.fechaCompletada DESC",
                 AsignacionTarea.class)
             .setParameter("pid", pisoId)
+            .setMaxResults(10)
             .getResultList();
     }
 
