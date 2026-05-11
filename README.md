@@ -1,6 +1,10 @@
 # SyncFlat — Gestión integral para pisos compartidos
 
-Aplicación web para coordinar la convivencia en un piso compartido: gastos, tareas, compras, calendario y mensajería. Desarrollada como práctica de la asignatura **Ingeniería Web (IW 2024-25)** de la UCM/FDI.
+SyncFlat es una aplicación web para coordinar la convivencia en un piso compartido. Permite gestionar gastos, tareas domésticas, listas de la compra, calendario de eventos y comunicación entre compañeros, todo desde una interfaz común.
+
+Desarrollada como práctica de la asignatura **Ingeniería Web (IW 2024-25)** de la UCM/FDI.
+
+---
 
 ## Tecnologías
 
@@ -14,6 +18,79 @@ Aplicación web para coordinar la convivencia en un piso compartido: gastos, tar
 | Tests | Karate 1.5.2 (JUnit 5) |
 | Build | Maven + Java 21 |
 
+---
+
+## Arquitectura
+
+El proyecto sigue una arquitectura en capas estricta:
+
+```
+Controller  →  Service  →  EntityManager (JPA)
+```
+
+Los controllers se limitan a resolver el contexto HTTP y delegar en el service correspondiente. Toda la lógica de negocio vive en los services, que acceden a la base de datos mediante JPQL a través de `EntityManager`. 
+
+La seguridad se gestiona con Spring Security 6: autenticación por formulario, roles `USER` y `ADMIN`, protección CSRF y restricción de rutas por rol. La sesión HTTP almacena el usuario activo y el piso al que pertenece, de modo que todos los módulos pueden resolver el contexto sin consultas adicionales.
+
+El sistema de mensajería en tiempo real usa WebSocket con protocolo STOMP. Las alertas del piso se difunden por `/topic` y los mensajes directos entre usuarios van por `/queue`. La autenticación WebSocket está integrada con Spring Security.
+
+---
+
+## Funcionalidades principales
+
+### Panel principal (Home)
+
+Dashboard con el estado actual del piso: alertas no leídas, próximos eventos, tareas pendientes asignadas al usuario y gastos recientes. Las alertas nuevas aparecen en tiempo real sin recargar la página (WebSocket). Desde aquí también se gestiona el piso: ver miembros, asignar habitaciones y compartir el código de invitación.
+
+### Gestión del piso y membresías
+
+Cualquier usuario puede crear un piso nuevo o unirse a uno existente usando un código de invitación de seis caracteres. Cada piso tiene un administrador que puede configurar el número de habitaciones, promover a otros miembros a administrador y gestionar el acceso. Al abandonar el piso, si el que se va es el único administrador, el rol se transfiere automáticamente al miembro más antiguo.
+
+### Gastos compartidos
+
+Los miembros pueden registrar gastos indicando el importe y a quién afectan. El reparto es automático y proporcional. La vista de gastos muestra tres secciones: el balance neto entre pares (compensando deudas cruzadas), las operaciones pendientes del usuario y el historial completo con detalle de participantes desplegable. Cada participante puede marcar su parte como pagada.
+
+### Listas de la compra
+
+Gestión de listas de la compra del piso. Los miembros añaden productos al catálogo del piso y los incluyen en listas activas con cantidad y responsable. Cada ítem se puede marcar como comprado mediante AJAX. Al registrar una compra se cierra la lista y, opcionalmente, se genera un gasto compartido asociado.
+
+### Tareas domésticas
+
+Creación de tareas puntuales o recurrentes (diarias, semanales, quincenales o mensuales) con asignación a un miembro concreto. El flujo de una tarea sigue tres estados: pendiente → completada (la marca el asignado) → validada (la confirma otro miembro). Todo el ciclo funciona mediante AJAX sin recargas.
+
+### Calendario y disponibilidad
+
+Calendario visual de eventos del piso (FullCalendar). Los eventos pasan por un flujo de aprobación: propuesto → aprobado/rechazado por el administrador. Cada usuario puede indicar su asistencia con un ciclo de tres estados. Además, cada miembro puede registrar sus bloques horarios personales (trabajo, clases, entrenamiento u otro), y el sistema detecta automáticamente conflictos entre un evento y los bloques de los asistentes.
+
+### Notificaciones en tiempo real
+
+Cuando se produce un evento relevante en el piso (nuevo gasto, tarea pendiente, alerta urgente…) todos los miembros conectados reciben una notificación en forma de toast sin necesidad de recargar. El icono de campana en la barra de navegación acumula el contador de alertas no leídas y se actualiza en directo.
+
+
+### Perfil de usuario
+
+Cada usuario puede editar su nombre, apellido y contraseña, y subir una foto de perfil. Los administradores del sistema pueden modificar cualquier perfil y habilitar o deshabilitar cuentas desde el panel de administración.
+
+---
+
+## Usuarios de prueba
+
+La base de datos se inicializa al arrancar con cinco usuarios. Todos tienen la contraseña `aa`.
+
+| Usuario | Contraseña | Roles | Piso |
+|---------|-----------|-------|------|
+| `a` | `aa` | ADMIN, USER | Piso Moncloa (administrador) |
+| `b` | `aa` | USER | Piso Moncloa |
+| `c` | `aa` | USER | Sin piso asignado |
+| `d` | `aa` | USER | Piso Retiro (administrador) |
+| `e` | `aa` | USER | Piso Moncloa |
+
+El usuario `a` tiene rol ADMIN a nivel de sistema (acceso a `/admin`). Los roles ADMIN/MIEMBRO dentro de un piso son independientes del rol de sistema.
+
+En modo debug, la barra de navegación muestra botones de login rápido para `a` y `b`.
+
+---
+
 ## Cómo ejecutar
 
 **Requisitos:** JDK 21 y Maven 3.8+.
@@ -25,35 +102,83 @@ mvn spring-boot:run
 
 La aplicación arranca en **http://localhost:8080**.
 
-En modo desarrollo (por defecto) se usa una base de datos H2 en memoria. Los datos se crean al arrancar desde `src/main/resources/import.sql` y se pierden al parar la aplicación.
+Se usa una base de datos H2 en memoria. Los datos se crean al arrancar desde `src/main/resources/import.sql` y se pierden al detener la aplicación.
 
 La consola H2 está disponible en **http://localhost:8080/h2** (solo en modo debug).
 
-### Usuarios de prueba
+No existe formulario de registro público. Los usuarios se crean mediante el seed inicial o desde el panel de administración (`/admin`).
 
-| Usuario | Contraseña | Rol |
-|---------|-----------|-----|
-| `a` | `aa` | ADMIN + USER |
-| `b` | `aa` | USER |
+---
 
-Ambos pertenecen al **Piso Moncloa** (`id=1`), que tiene datos de prueba cargados al arrancar.
+## Estructura del repositorio
 
-En modo debug, la barra de navegación muestra botones de login rápido para `a` y `b`.
+`src/` y `pom.xml` están en la raíz del proyecto.
 
-## Base de datos y modelo JPA
+```
+pom.xml
+src/
+├── main/
+│   ├── java/es/ucm/fdi/iw/
+│   │   ├── IwApplication.java
+│   │   ├── SecurityConfig.java
+│   │   ├── WebSocketConfig.java
+│   │   ├── WebSocketSecurityConfig.java
+│   │   ├── LoginSuccessHandler.java
+│   │   ├── IwUserDetailsService.java
+│   │   ├── controller/
+│   │   │   ├── BaseController.java
+│   │   │   ├── RootController.java
+│   │   │   ├── HomeController.java
+│   │   │   ├── PisoController.java
+│   │   │   ├── GastoController.java
+│   │   │   ├── TareaController.java
+│   │   │   ├── CompraController.java
+│   │   │   ├── CalendarioController.java
+│   │   │   ├── AlertaController.java
+│   │   │   ├── UserController.java
+│   │   │   ├── AdminController.java
+│   │   │   ├── ApiController.java
+│   │   │   └── GlobalExceptionHandler.java
+│   │   ├── service/
+│   │   │   ├── PisoService.java
+│   │   │   ├── GastoService.java
+│   │   │   ├── TareaService.java
+│   │   │   ├── CompraService.java
+│   │   │   ├── CalendarioService.java
+│   │   │   └── AlertaService.java
+│   │   ├── dto/                    # Form DTOs y ApiResponse
+│   │   └── model/                  # 17 entidades JPA + 6 enums
+│   └── resources/
+│       ├── application.properties
+│       ├── application-container.properties
+│       ├── import.sql
+│       └── templates/
+│           ├── fragments/          # head.html, nav.html, footer.html, alerts.html
+│           ├── index.html, login.html, autores.html, error.html
+│           ├── home.html, gastos.html, compra.html, compra-gestion.html
+│           ├── tareas.html, calendario.html, user.html, admin.html
+│           └── static/css, js, img/
+└── test/
+    └── java/es/ucm/fdi/iw/
+        ├── PruebaTest.java         # Runner JUnit 5 de Karate
+        └── *.feature               # 16 ficheros de escenarios Karate
+```
 
-El esquema se genera automáticamente por Hibernate a partir de las entidades (`ddl-auto=create-drop`). Los datos iniciales se cargan desde `import.sql`.
+---
 
-### Entidades (16) y enumerados (6)
+## Modelo de datos
+
+El esquema se genera automáticamente por Hibernate a partir de las entidades (`ddl-auto=create-drop`). La descripción detallada del modelo y las decisiones de diseño está en [`datadoc.md`](datadoc.md). El diagrama ER está en `bd.png`.
+
+### Entidades (17) y enumerados (6)
 
 | Entidad | Descripción |
 |---------|------------|
 | `User` | Usuario del sistema. Roles: `USER`, `ADMIN` |
 | `Piso` | Piso compartido (entidad central) |
-| `MiembroPiso` | Relación usuario-piso con rol (`PROPIETARIO`, `INQUILINO`) |
+| `MiembroPiso` | Relación usuario-piso con rol (`ADMIN`, `MIEMBRO`) |
 | `Gasto` | Gasto registrado por un pagador. Estado: `PENDIENTE`, `LIQUIDADO` |
 | `ParticipanteGasto` | Parte que corresponde a cada miembro en un gasto |
-| `Liquidacion` | Cierre de período de gastos del piso |
 | `Tarea` | Tarea doméstica. Tipo: `PUNTUAL`, `RECURRENTE` |
 | `AsignacionTarea` | Asignación de una tarea a un usuario concreto |
 | `ListaCompra` | Lista de la compra del piso |
@@ -61,136 +186,69 @@ El esquema se genera automáticamente por Hibernate a partir de las entidades (`
 | `Producto` | Producto del catálogo del piso |
 | `Compra` | Compra realizada sobre una lista |
 | `Evento` | Evento del calendario del piso |
-| `AsistenciaEvento` | Respuesta de un usuario a un evento (`PENDIENTE`, `CONFIRMADO`, `RECHAZADO`) |
-| `BloqueHorario` | Franja horaria personal de un usuario. Tipo: `TRABAJO`, `CLASES`, `ENTRENAMIENTO`, `OTRO` |
-| `Ausencia` | Período de ausencia de un miembro |
+| `AsistenciaEvento` | Respuesta de un miembro a un evento (`PENDIENTE`, `CONFIRMADO`, `RECHAZADO`) |
+| `BloqueHorario` | Franja horaria personal. Tipo: `TRABAJO`, `CLASES`, `ENTRENAMIENTO`, `OTRO` |
 | `Alerta` | Aviso del piso. Tipo: `INFO`, `URGENTE`, `RECORDATORIO` |
-| `Message` | Mensaje entre usuarios (plantilla) |
-| `Topic` | Canal de mensajería (plantilla) |
+| `Message` | Mensaje directo entre usuarios |
+| `Topic` | Canal de mensajería grupal |
 
-El diagrama ER de referencia está en `bd.png`. La descripción detallada del modelo, decisiones de diseño y generación de IDs está en [`datadoc.md`](datadoc.md).
+---
 
-## Estructura del proyecto
+## Recursos externos utilizados
 
-```
-src/
-├── main/
-│   ├── java/es/ucm/fdi/iw/
-│   │   ├── IwApplication.java           # Punto de entrada
-│   │   ├── SecurityConfig.java          # Seguridad HTTP y roles
-│   │   ├── WebSocketConfig.java         # Broker STOMP
-│   │   ├── LoginSuccessHandler.java     # Redirect post-login
-│   │   ├── IwUserDetailsService.java    # Carga usuarios desde JPA
-│   │   ├── AppConfig.java               # Beans auxiliares
-│   │   ├── StartupConfig.java           # Lee es.ucm.fdi.debug
-│   │   ├── controller/
-│   │   │   ├── BaseController.java      # Utilidades comunes (resolverPiso, usuario en sesión)
-│   │   │   ├── HomeController.java      # Dashboard del piso
-│   │   │   ├── GastoController.java     # Módulo de gastos
-│   │   │   ├── TareaController.java     # Módulo de tareas
-│   │   │   ├── CompraController.java    # Módulo de lista de la compra
-│   │   │   ├── CalendarioController.java # Módulo de calendario, bloques y conflictos
-│   │   │   ├── UserController.java      # Perfil, mensajería, fotos
-│   │   │   ├── AdminController.java     # Panel de administración
-│   │   │   └── ApiController.java       # API REST pública
-│   │   ├── dto/                         # Form DTOs y ApiResponse
-│   │   ├── service/                     # Lógica de negocio por módulo
-│   │   └── model/                       # 16 entidades JPA + 6 enums
-│   └── resources/
-│       ├── application.properties       # Configuración desarrollo (H2 en memoria)
-│       ├── application-container.properties  # Configuración producción (H2 fichero)
-│       ├── import.sql                   # Datos iniciales de prueba
-│       └── templates/
-│           ├── fragments/               # head.html, nav.html, footer.html
-│           ├── index.html, login.html, autores.html, error.html
-│           ├── home.html, gastos.html, compra.html, tareas.html, calendario.html
-│           ├── user.html, admin.html
-│           └── static/css, js, img/     # Bootstrap 5.3.3, iw.js, stomp.js
-└── test/
-    └── java/es/ucm/fdi/iw/
-        ├── PruebaTest.java              # Runner JUnit 5 de Karate
-        └── prueba.feature               # 10 escenarios Karate
-```
+Los siguientes recursos son externos a la plantilla de la asignatura:
 
-## Rutas principales
+| Recurso | Versión | Uso |
+|---------|---------|-----|
+| [FullCalendar](https://fullcalendar.io/) | 6.1.15 | Calendario visual interactivo en el módulo de calendario. Cargado desde CDN. |
+| [Bootstrap Icons](https://icons.getbootstrap.com/) | 1.11.3 | Iconografía en botones, badges y cabeceras de sección. Cargado desde CDN. |
+| WhatsApp Share Link | — | Fallback mediante enlace externo `https://wa.me/?text=...` para compartir el código de invitación, sin integración con la API oficial de WhatsApp. |El resto de dependencias de frontend (Bootstrap 5.3.3, STOMP.js, iw.js) proceden de la plantilla base de la asignatura. Las dependencias de backend se gestionan desde `pom.xml` con Maven.
 
-Todas las rutas de `/modulos/**` requieren autenticación. Un usuario sin sesión es redirigido automáticamente a `/login`.
+---
 
-### Rutas GET (lectura / render de vista)
+## Uso de inteligencia artificial
 
-| Ruta | Vista | Acceso | Descripción |
-|------|-------|--------|-------------|
-| `GET /` | index.html | Público | Landing page |
-| `GET /login` | login.html | Público | Formulario de login |
-| `GET /autores` | autores.html | Público | Información del autor |
-| `GET /modulos/home` | home.html | Autenticado | Dashboard: eventos, tareas, gastos y alertas del piso |
-| `GET /modulos/gastos` | gastos.html | Autenticado | Listado de gastos y participantes |
-| `GET /modulos/compra` | compra.html | Autenticado | Listas de la compra e ítems |
-| `GET /modulos/tareas` | tareas.html | Autenticado | Tareas y asignaciones del piso |
-| `GET /modulos/calendario` | calendario.html | Autenticado | Eventos, bloques horarios personales y detección de conflictos |
-| `GET /user/{id}` | user.html | ROLE_USER | Perfil de usuario |
-| `GET /admin/` | admin.html | ROLE_ADMIN | Panel de administración |
+Se ha utilizado **Claude Sonnet 4.6** (Anthropic) como herramienta de apoyo en varias fases del desarrollo:
 
-### Rutas POST (escritura / modificación)
+- **Documentación:** generación de Javadoc, ayuda para generación de partes del README.
+- **Tests:** ayuda para completar la suite Karate, especialmente en los escenarios de seguridad y flujos más complejos (sucesión de administrador, recurrencia de tareas, acceso cross-piso).
+- **Repetición de patrones:** generación de formularios con estructura similar a los ya existentes.
 
-| Ruta | Acción | Acceso |
-|------|--------|--------|
-| `POST /login` | Autenticación (gestionado por Spring Security) | Público |
-| `POST /logout` | Cierre de sesión | Autenticado |
-| `POST /modulos/gastos` | Crear gasto y repartir entre miembros | Autenticado |
-| `POST /modulos/compra/item` | Añadir ítem a lista de la compra | Autenticado |
-| `POST /modulos/compra/item/{id}/toggle` | Marcar/desmarcar ítem como comprado (AJAX, devuelve JSON) | Autenticado |
-| `POST /modulos/tareas` | Crear tarea con asignación opcional | Autenticado |
-| `POST /modulos/tareas/{id}/completar` | Completar o reabrir asignación de tarea (AJAX, devuelve JSON) | Autenticado |
-| `POST /modulos/calendario` | Crear evento del piso | Autenticado |
-| `POST /modulos/calendario/asistencia/{eventoId}` | Cambiar mi asistencia a un evento (AJAX, devuelve JSON) | Autenticado |
-| `POST /modulos/calendario/bloque` | Añadir bloque horario personal | Autenticado |
-| `DELETE /modulos/calendario/bloque/{id}` | Eliminar bloque horario propio (AJAX, devuelve JSON) | Autenticado |
-| `GET /modulos/calendario/conflictos/{eventoId}` | Detectar conflictos del evento con bloques de miembros (AJAX, devuelve JSON) | Autenticado |
-| `POST /user/{id}` | Editar perfil de usuario | ROLE_USER |
-| `POST /user/{id}/pic` | Subir foto de perfil | ROLE_USER |
-| `POST /user/{id}/msg` | Enviar mensaje a otro usuario (WebSocket) | ROLE_USER |
-| `POST /admin/toggle/{id}` | Habilitar/deshabilitar usuario (AJAX) | ROLE_ADMIN |
 
-## Estado de implementación por módulo
-
-| Módulo | Ruta | Estado | Detalle |
-|--------|------|--------|---------|
-| **Landing** | `GET /` | ✅ Completo | Presentación y enlaces a módulos |
-| **Login** | `GET /login` | ✅ Completo | Formulario con CSRF; botones de login rápido en modo debug |
-| **Home** | `GET /modulos/home` | ✅ Completo | Dashboard con datos reales: próximos 5 eventos, 5 tareas pendientes, 5 gastos recientes y alertas no leídas |
-| **Gastos** | `GET+POST /modulos/gastos` | ✅ Completo | Crear gasto, reparto automático entre miembros, tabla de participantes |
-| **Compra** | `GET+POST /modulos/compra` | ✅ Completo | Añadir ítems, toggle comprado/pendiente vía AJAX |
-| **Tareas** | `GET+POST /modulos/tareas` | ✅ Completo | Crear tarea, asignar a miembro, completar/reabrir vía AJAX |
-| **Calendario** | `GET+POST /modulos/calendario` | ✅ Completo | Crear eventos, confirmar/rechazar asistencia, bloques horarios personales y detección de conflictos vía AJAX |
-| **Usuario** | `GET+POST /user/{id}` | ✅ Completo | Perfil, foto, mensajería en tiempo real (WebSocket/STOMP) |
-| **Admin** | `GET+POST /admin/` | ✅ Completo | Listar usuarios, habilitar/deshabilitar |
-| **Liquidaciones** | — | ⏳ Pendiente | Entidad y datos en BD; sin vista ni lógica de negocio |
-| **Ausencias** | — | ⏳ Pendiente | Entidad y datos en BD; sin vista |
+---
 
 ## Tests (Karate)
 
-Los tests se ejecutan automáticamente con:
+Los tests se ejecutan con:
 
 ```bash
 mvn test
 ```
 
-`PruebaTest` arranca el servidor embebido en un puerto aleatorio (`@SpringBootTest(webEnvironment = RANDOM_PORT)`) y pasa el puerto a Karate mediante una propiedad de sistema. No es necesario levantar el servidor manualmente.
+`PruebaTest` arranca el servidor embebido en un puerto aleatorio y pasa el puerto a Karate mediante una propiedad de sistema. No es necesario levantar el servidor manualmente.
 
-Los escenarios están distribuidos en varios ficheros `.feature`:
+**Resultado:** 64 escenarios en 16 ficheros `.feature`, todos en verde.
 
-| Feature | Escenarios | Qué cubre |
-|---------|-----------|-----------|
-| `prueba.feature` | 10 | Login, CSRF, smoke tests de vistas, creación de gasto y tarea |
-| `auth.feature` | 3 | Autenticación, acceso sin sesión, redirección a login |
-| `admin.feature` | 3 | Panel ADMIN, toggle habilitado/deshabilitado |
-| `gastos.feature` | 3 | Crear gasto, pagar participación, validación de errores |
-| `compra.feature` | 3 | Añadir ítem, toggle comprado, flujo de compra |
-| `tareas.feature` | 3 | Crear tarea, completar asignación, validación |
-| `calendario.feature` | 7 | Bloques horarios, conflictos AJAX, asistencia a eventos |
+| Feature | Qué cubre |
+|---------|-----------|
+| `auth.feature` | Autenticación, acceso sin sesión, redirección a login |
+| `prueba.feature` | Login, CSRF, smoke tests de vistas, creación de gasto y tarea |
+| `piso.feature` | Crear piso, unirse con código, gestión de membresías |
+| `habitaciones.feature` | Asignación de habitaciones a miembros |
+| `habitaciones_admin.feature` | Configuración de habitaciones por el administrador |
+| `gastos.feature` | Crear gasto, pagar participación, validación de errores |
+| `compra.feature` | Añadir ítem, toggle comprado, flujo de compra |
+| `registrar_compra.feature` | Registro de compra y generación de gasto asociado |
+| `tareas.feature` | Crear tarea, completar asignación |
+| `validacion_tareas.feature` | Flujo de validación de tareas completadas |
+| `seguridad_tareas.feature` | Control de acceso entre usuarios de distintos pisos |
+| `vr_recurrencia.feature` | Validación de tareas recurrentes |
+| `calendario.feature` | Bloques horarios, conflictos AJAX, asistencia a eventos |
+| `alertas.feature` | Creación y lectura de alertas del piso |
+| `admin.feature` | Panel ADMIN, toggle habilitado/deshabilitado |
+| `z_sucesion_admin.feature` | Transferencia de administrador al abandonar el piso |
 
-Total: **32 escenarios** cubriendo el ciclo completo POST → H2 → GET en todos los módulos.
+---
 
 ## Configuración
 
@@ -198,8 +256,8 @@ Total: **32 escenarios** cubriendo el ciclo completo POST → H2 → GET en todo
 
 - H2 en memoria (`jdbc:h2:mem:iwdb`), se recrea al arrancar
 - `ddl-auto=create-drop` + `import.sql` para datos de prueba
-- Consola H2 en `/h2`, caché desactivada, stacktrace en errores
-- `es.ucm.fdi.debug=true` — activa botones de debug en la navbar
+- Consola H2 en `/h2` y caché de plantillas desactivada
+- `es.ucm.fdi.debug=true` — activa botones de login rápido en la navbar
 
 ### Producción (`application-container.properties`, perfil `container`)
 
@@ -213,4 +271,7 @@ Total: **32 escenarios** cubriendo el ciclo completo POST → H2 → GET en todo
 python deploy.py
 ```
 
-El script empaqueta el JAR, sube los ficheros vía SSH y reinicia el contenedor Docker en la VM de la FDI. Requiere `credentials.json` (no se sube al repositorio; usar `credentials.json.template` como base).
+El script empaqueta el JAR, sube los ficheros vía SSH y reinicia el contenedor Docker en la VM de la FDI. Requiere `credentials.json` (no se sube al repositorio; usar `credentials.json.template` como plantilla).
+
+---
+
