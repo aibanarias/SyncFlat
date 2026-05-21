@@ -9,7 +9,7 @@ Background:
   * callonce read('helpers/login.feature') { username: 'a', password: 'aa' }
 
 Scenario: home muestra resumen del piso
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   And match response contains 'eventos'

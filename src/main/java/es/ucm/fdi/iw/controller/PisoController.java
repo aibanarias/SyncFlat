@@ -33,7 +33,7 @@ import jakarta.validation.Valid;
  */
 @RequiredArgsConstructor
 @Controller
-@RequestMapping("/modulos/piso")
+@RequestMapping("/piso")
 public class PisoController extends BaseController {
 
     private static final Logger log = LogManager.getLogger(PisoController.class);
@@ -44,7 +44,7 @@ public class PisoController extends BaseController {
     @GetMapping
     public String piso(Model model, HttpSession session) {
         if (pisoService.resolverPiso(session) != null) {
-            return "redirect:/modulos/home";
+            return "redirect:/home";
         }
         return "piso";
     }
@@ -57,15 +57,15 @@ public class PisoController extends BaseController {
         if (u == null) return "redirect:/login";
         if (errors.hasErrors()) {
             ra.addFlashAttribute("flashError", errors.getAllErrors().get(0).getDefaultMessage());
-            return "redirect:/modulos/piso";
+            return "redirect:/piso";
         }
         try {
             pisoService.crearPiso(form, u);
             ra.addFlashAttribute("flashSuccess", "Piso creado correctamente. ¡Bienvenido, administrador!");
-            return "redirect:/modulos/home";
+            return "redirect:/home";
         } catch (IllegalStateException e) {
             ra.addFlashAttribute("flashError", e.getMessage());
-            return "redirect:/modulos/piso";
+            return "redirect:/piso";
         }
     }
 
@@ -77,15 +77,15 @@ public class PisoController extends BaseController {
         if (u == null) return "redirect:/login";
         if (errors.hasErrors()) {
             ra.addFlashAttribute("flashError", errors.getAllErrors().get(0).getDefaultMessage());
-            return "redirect:/modulos/piso";
+            return "redirect:/piso";
         }
         try {
             pisoService.unirse(form.getCodigo(), u);
             ra.addFlashAttribute("flashSuccess", "Te has unido al piso correctamente. ¡Bienvenido!");
-            return "redirect:/modulos/home";
+            return "redirect:/home";
         } catch (IllegalArgumentException | IllegalStateException e) {
             ra.addFlashAttribute("flashError", e.getMessage());
-            return "redirect:/modulos/piso";
+            return "redirect:/piso";
         }
     }
 
@@ -100,15 +100,15 @@ public class PisoController extends BaseController {
         if (u == null) return "redirect:/login";
         if (errors.hasErrors()) {
             ra.addFlashAttribute("flashError", errors.getAllErrors().get(0).getDefaultMessage());
-            return "redirect:/modulos/home";
+            return "redirect:/home";
         }
         try {
             pisoService.asignarHabitacion(u, form.getNumHabitacion());
             ra.addFlashAttribute("flashSuccess", "Habitación " + form.getNumHabitacion() + " asignada correctamente.");
-            return "redirect:/modulos/home";
+            return "redirect:/home";
         } catch (IllegalArgumentException | IllegalStateException e) {
             ra.addFlashAttribute("flashError", e.getMessage());
-            return "redirect:/modulos/home";
+            return "redirect:/home";
         }
     }
 
@@ -123,20 +123,20 @@ public class PisoController extends BaseController {
         if (u == null) return "redirect:/login";
         if (errors.hasErrors()) {
             ra.addFlashAttribute("flashError", errors.getAllErrors().get(0).getDefaultMessage());
-            return "redirect:/modulos/home";
+            return "redirect:/home";
         }
         Piso piso = pisoService.resolverPiso(session);
         if (piso == null) {
             ra.addFlashAttribute("flashError", "No perteneces a ningún piso activo.");
-            return "redirect:/modulos/piso";
+            return "redirect:/piso";
         }
         try {
             pisoService.configurarHabitaciones(piso.getId(), form.getNumHabitaciones(), u);
             ra.addFlashAttribute("flashSuccess", "Piso actualizado: " + form.getNumHabitaciones() + " habitaciones en total.");
-            return "redirect:/modulos/home";
+            return "redirect:/home";
         } catch (IllegalArgumentException | IllegalStateException e) {
             ra.addFlashAttribute("flashError", e.getMessage());
-            return "redirect:/modulos/home";
+            return "redirect:/home";
         }
     }
 
@@ -152,10 +152,10 @@ public class PisoController extends BaseController {
         try {
             pisoService.promoverAdmin(membresiaId, u);
             ra.addFlashAttribute("flashSuccess", "Miembro promovido a administrador del piso correctamente.");
-            return "redirect:/modulos/home";
+            return "redirect:/home";
         } catch (IllegalArgumentException | IllegalStateException e) {
             ra.addFlashAttribute("flashError", e.getMessage());
-            return "redirect:/modulos/home";
+            return "redirect:/home";
         }
     }
 
@@ -180,10 +180,10 @@ public class PisoController extends BaseController {
                     "Has abandonado el piso. El piso ha sido eliminado al no quedar miembros activos.";
             };
             ra.addFlashAttribute("flashSuccess", msg);
-            return "redirect:/modulos/piso";
+            return "redirect:/piso";
         } catch (IllegalStateException e) {
             ra.addFlashAttribute("flashError", e.getMessage());
-            return "redirect:/modulos/home";
+            return "redirect:/home";
         }
     }
 }

@@ -262,8 +262,9 @@ mvn test
 ### Producción (`application-container.properties`, perfil `container`)
 
 - H2 persistente en fichero (`jdbc:h2:file:./iwdb`)
-- `ddl-auto=validate`, caché activada, consola H2 desactivada
-- Puerto 80, debug desactivado
+- `ddl-auto=create`: recrea las tablas en cada arranque y ejecuta `import.sql`; los datos se persisten en disco hasta el siguiente inicio
+- Caché activada, consola H2 desactivada, puerto 80, debug desactivado
+- Ficheros de entrega: `iwdb.mv.db` (raíz del proyecto) e `iwdata/` (comprimido como `iwdata.zip`)
 
 ### Despliegue
 

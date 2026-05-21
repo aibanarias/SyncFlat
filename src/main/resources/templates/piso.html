@@ -31,7 +31,7 @@
                             <p class="card-text text-muted small">
                                 Se generará un código de invitación único que podrás compartir con tus compañeros.
                             </p>
-                            <form th:action="@{/modulos/piso/crear}" method="post">
+                            <form th:action="@{/piso/crear}" method="post">
                                 <div class="mb-3">
                                     <label for="nombre" class="form-label">Nombre del piso</label>
                                     <input type="text" class="form-control" id="nombre" name="nombre"
@@ -60,7 +60,7 @@
                             <p class="card-text text-muted small">
                                 Pide el código de invitación al propietario o a uno de tus compañeros.
                             </p>
-                            <form th:action="@{/modulos/piso/unirse}" method="post">
+                            <form th:action="@{/piso/unirse}" method="post">
                                 <div class="mb-3">
                                     <label for="codigo" class="form-label">Código de invitación</label>
                                     <input type="text" class="form-control font-monospace text-uppercase"

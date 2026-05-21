@@ -30,7 +30,7 @@
                 <div class="card mb-4">
                     <div class="card-header">Crear nueva tarea</div>
                     <div class="card-body">
-                        <form th:action="@{/modulos/tareas}" method="post" class="row g-3">
+                        <form th:action="@{/tareas}" method="post" class="row g-3">
                             <div class="col-md-4">
                                 <label for="nombre" class="form-label">Nombre</label>
                                 <input type="text" class="form-control" id="nombre" name="nombre"
@@ -306,7 +306,7 @@
         document.querySelectorAll('.completar-tarea').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var id = this.getAttribute('data-id');
-                go('/modulos/tareas/' + id + '/completar', 'POST')
+                go('/tareas/' + id + '/completar', 'POST')
                     .then(function () { window.location.reload(); })
                     .catch(mostrarError);
             });
@@ -316,7 +316,7 @@
         document.querySelectorAll('.validar-tarea').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 var id = this.getAttribute('data-id');
-                go('/modulos/tareas/' + id + '/validar', 'POST')
+                go('/tareas/' + id + '/validar', 'POST')
                     .then(function () { window.location.reload(); })
                     .catch(mostrarError);
             });

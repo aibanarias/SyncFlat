@@ -386,7 +386,7 @@
 
             events: function (info, successCb, failureCb) {
                 // Pasa el rango visible al feed para filtrar y expandir recurrencias
-                go('/modulos/calendario/feed', 'GET',
+                go('/calendario/feed', 'GET',
                     { start: info.startStr, end: info.endStr })
                     .then(resp => {
                         successCb(resp.data.filter(ev => {
@@ -497,7 +497,7 @@
                 form.append('fechaFin',        document.getElementById('ev-fin').value);
                 form.append('tipoRecurrencia', document.getElementById('ev-recurrencia').value);
                 form.append('diasSemana',      recogerDiasSemana('ev'));
-                go('/modulos/calendario/evento/crear', 'POST', form)
+                go('/calendario/evento/crear', 'POST', form)
                     .then(() => { modalCrear.hide(); calendar.refetchEvents(); })
                     .catch(onError);
             } else {
@@ -508,7 +508,7 @@
                 form.append('fin',             document.getElementById('bl-fin').value);
                 form.append('tipoRecurrencia', document.getElementById('bl-recurrencia').value);
                 form.append('diasSemana',      recogerDiasSemana('bl'));
-                go('/modulos/calendario/bloque/crear', 'POST', form)
+                go('/calendario/bloque/crear', 'POST', form)
                     .then(() => { modalCrear.hide(); calendar.refetchEvents(); })
                     .catch(onError);
             }
@@ -588,10 +588,10 @@
                         <button class="btn btn-sm btn-outline-danger" id="d-rechazar">Rechazar</button>
                         <button class="btn btn-sm btn-outline-secondary ms-auto" id="d-conflictos">Ver conflictos</button>`;
                     document.getElementById('d-aprobar').addEventListener('click', () =>
-                        go('/modulos/calendario/evento/' + p.eventoId + '/aprobar', 'POST')
+                        go('/calendario/evento/' + p.eventoId + '/aprobar', 'POST')
                             .then(() => { modalDetalle.hide(); calendar.refetchEvents(); }).catch(console.error));
                     document.getElementById('d-rechazar').addEventListener('click', () =>
-                        go('/modulos/calendario/evento/' + p.eventoId + '/rechazar', 'POST')
+                        go('/calendario/evento/' + p.eventoId + '/rechazar', 'POST')
                             .then(() => { modalDetalle.hide(); calendar.refetchEvents(); }).catch(console.error));
 
                 } else if (p.estado === 'APROBADO') {
@@ -605,19 +605,19 @@
                     /* AJAX + reload: garantiza que la lista de asistencias siempre está actualizada */
                     document.getElementById('d-asistencia').addEventListener('click', function () {
                         this.disabled = true;
-                        go('/modulos/calendario/asistencia/' + p.eventoId, 'POST')
+                        go('/calendario/asistencia/' + p.eventoId, 'POST')
                             .then(() => location.reload())
                             .catch(err => { this.disabled = false; console.error(err); });
                     });
                     document.getElementById('d-rechazar').addEventListener('click', () =>
-                        go('/modulos/calendario/evento/' + p.eventoId + '/rechazar', 'POST')
+                        go('/calendario/evento/' + p.eventoId + '/rechazar', 'POST')
                             .then(() => { modalDetalle.hide(); calendar.refetchEvents(); }).catch(console.error));
 
                 } else {
                     acciones.innerHTML = `
                         <button class="btn btn-sm btn-outline-secondary" id="d-reabrir">Reabrir propuesta</button>`;
                     document.getElementById('d-reabrir').addEventListener('click', () =>
-                        go('/modulos/calendario/evento/' + p.eventoId + '/reabrir', 'POST')
+                        go('/calendario/evento/' + p.eventoId + '/reabrir', 'POST')
                             .then(() => { modalDetalle.hide(); calendar.refetchEvents(); }).catch(console.error));
                 }
 
@@ -625,7 +625,7 @@
                 if (btnConf) {
                     btnConf.addEventListener('click', function () {
                         this.disabled = true; this.textContent = '…';
-                        go('/modulos/calendario/conflictos/' + p.eventoId, 'GET')
+                        go('/calendario/conflictos/' + p.eventoId, 'GET')
                             .then(resp => {
                                 const panel = document.getElementById('conflictos-detalle-panel');
                                 this.style.display = 'none';
@@ -670,7 +670,7 @@
                         Eliminar ${p.tipoRecurrencia && p.tipoRecurrencia !== 'NINGUNA' ? 'serie de bloques' : 'bloque'}
                     </button>`;
                     document.getElementById('d-eliminar').addEventListener('click', () =>
-                        go('/modulos/calendario/bloque/' + p.bloqueId, 'DELETE')
+                        go('/calendario/bloque/' + p.bloqueId, 'DELETE')
                             .then(() => { modalDetalle.hide(); calendar.refetchEvents(); }).catch(console.error));
                 } else {
                     acciones.innerHTML = '<span class="text-muted small">Bloque de otro miembro.</span>';

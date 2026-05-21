@@ -27,7 +27,7 @@ import jakarta.servlet.http.HttpSession;
  */
 @RequiredArgsConstructor
 @Controller
-@RequestMapping("/modulos/alertas")
+@RequestMapping("/alertas")
 public class AlertaController extends BaseController {
 
     private static final Logger log = LogManager.getLogger(AlertaController.class);
@@ -53,7 +53,7 @@ public class AlertaController extends BaseController {
 
     /**
      * Marca como leídas todas las alertas pendientes del piso.
-     * Redirige a {@code /modulos/home} con un mensaje flash informativo.
+     * Redirige a {@code /home} con un mensaje flash informativo.
      */
     @PostMapping("/leer-todas")
     public String marcarTodasLeidas(HttpSession session, RedirectAttributes ra) {
@@ -62,6 +62,6 @@ public class AlertaController extends BaseController {
         int n = alertaService.marcarTodasLeidas(piso.getId());
         ra.addFlashAttribute("flashSuccess",
             n + " alerta" + (n == 1 ? "" : "s") + " marcadas como leídas.");
-        return "redirect:/modulos/home";
+        return "redirect:/home";
     }
 }

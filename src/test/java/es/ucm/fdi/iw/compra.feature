@@ -6,12 +6,12 @@ Background:
 
 Scenario: toggle de item de compra devuelve estado actualizado
   # Asume que el item con id=1 existe (import.sql)
-  Given path 'modulos/compra'
+  Given path 'compra'
   When method get
   Then status 200
   * def csrfToggle = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/compra/item/1/toggle'
+  Given path 'compra/item/1/toggle'
   And header X-CSRF-TOKEN = csrfToggle
   And request {}
   When method post
@@ -22,7 +22,7 @@ Scenario: toggle de item de compra devuelve estado actualizado
 # 3. La vista de gestión permite a cualquier miembro crear listas
 # ------------------------------------------------------------------
 Scenario: la vista de gestión es accesible y muestra formulario de lista
-  Given path 'modulos/compra/gestion'
+  Given path 'compra/gestion'
   When method get
   Then status 200
   And match response contains 'Nueva lista de la compra'
@@ -34,12 +34,12 @@ Scenario: la vista de gestión es accesible y muestra formulario de lista
 # 4. Cualquier miembro puede crear una lista con participantes específicos
 # ------------------------------------------------------------------
 Scenario: crear lista con participantes concretos
-  Given path 'modulos/compra/gestion'
+  Given path 'compra/gestion'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/compra/lista'
+  Given path 'compra/lista'
   And form field nombre = 'Lista Karate Participantes'
   And form field participanteIds = '1'
   And form field _csrf = csrf

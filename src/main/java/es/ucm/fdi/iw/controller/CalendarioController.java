@@ -46,7 +46,7 @@ import jakarta.validation.Valid;
  */
 @RequiredArgsConstructor
 @Controller
-@RequestMapping("/modulos/calendario")
+@RequestMapping("/calendario")
 public class CalendarioController extends BaseController {
 
     private static final Logger log = LogManager.getLogger(CalendarioController.class);
@@ -162,7 +162,7 @@ public class CalendarioController extends BaseController {
         if (u == null || piso == null) return "redirect:/login";
         if (errors.hasErrors()) {
             ra.addFlashAttribute("flashError", errors.getAllErrors().get(0).getDefaultMessage());
-            return "redirect:/modulos/calendario";
+            return "redirect:/calendario";
         }
         try {
             calendarioService.crearEvento(form, u.getId(), piso);
@@ -171,7 +171,7 @@ public class CalendarioController extends BaseController {
             log.warn("crearEvento: {}", e.getMessage());
             ra.addFlashAttribute("flashError", e.getMessage());
         }
-        return "redirect:/modulos/calendario";
+        return "redirect:/calendario";
     }
 
     // -----------------------------------------------------------------------
@@ -255,7 +255,7 @@ public class CalendarioController extends BaseController {
         if (u == null) return "redirect:/login";
         if (errors.hasErrors()) {
             ra.addFlashAttribute("flashError", errors.getAllErrors().get(0).getDefaultMessage());
-            return "redirect:/modulos/calendario";
+            return "redirect:/calendario";
         }
         try {
             calendarioService.crearBloque(form, u);
@@ -264,7 +264,7 @@ public class CalendarioController extends BaseController {
             log.warn("crearBloque: {}", e.getMessage());
             ra.addFlashAttribute("flashError", e.getMessage());
         }
-        return "redirect:/modulos/calendario";
+        return "redirect:/calendario";
     }
 
     /**

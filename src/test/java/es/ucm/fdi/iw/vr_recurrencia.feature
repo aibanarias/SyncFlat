@@ -10,7 +10,7 @@ Background:
   * callonce read('helpers/login.feature') { username: 'a', password: 'aa' }
 
 Scenario: la siguiente ocurrencia aparece en la lista de tareas pendientes
-  Given path 'modulos/tareas'
+  Given path 'tareas'
   When method get
   Then status 200
   And match response contains '2025-10-26'

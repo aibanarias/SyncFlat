@@ -42,7 +42,7 @@
                             </button>
                         </span>
                     </div>
-                    <form th:action="@{/modulos/piso/abandonar}" method="post" class="mb-0"
+                    <form th:action="@{/piso/abandonar}" method="post" class="mb-0"
                           onsubmit="return confirm('¿Seguro que quieres abandonar el piso? Esta acción no se puede deshacer.')">
                         <button type="submit" class="btn btn-outline-danger btn-sm">Abandonar piso</button>
                     </form>
@@ -89,7 +89,7 @@
                                 </li>
                             </ul>
                             <div class="card-footer py-1" th:if="${not #lists.isEmpty(alertas)}">
-                                <form th:action="@{/modulos/alertas/leer-todas}" method="post"
+                                <form th:action="@{/alertas/leer-todas}" method="post"
                                       class="text-end mb-0">
                                     <button type="submit" class="btn btn-sm btn-outline-secondary">
                                         Marcar todas como leídas
@@ -223,7 +223,7 @@
                                                     <!-- Botón de promover: solo para ADMINs y sobre no-ADMINs que no sean el propio usuario -->
                                                     <td th:if="${esAdmin}">
                                                         <form th:if="${mp.rolEnPiso.name() != 'ADMIN' && miMembresia != null && mp.usuario.id != miMembresia.usuario.id}"
-                                                              th:action="@{/modulos/piso/promover-admin}" method="post" class="mb-0">
+                                                              th:action="@{/piso/promover-admin}" method="post" class="mb-0">
                                                             <input type="hidden" name="membresiaId" th:value="${mp.id}">
                                                             <button type="submit" class="btn btn-warning btn-sm py-0"
                                                                     title="Promover a administrador"
@@ -269,7 +269,7 @@
                                     <div class="col-md-4 d-flex flex-column gap-3">
 
                                         <!-- Mi habitación -->
-                                        <form th:action="@{/modulos/piso/habitaciones/mi-habitacion}" method="post">
+                                        <form th:action="@{/piso/habitaciones/mi-habitacion}" method="post">
                                             <label class="form-label fw-semibold small">Mi habitación</label>
                                             <div class="input-group input-group-sm">
                                                 <input type="number" class="form-control" name="numHabitacion"
@@ -292,7 +292,7 @@
                                                 <span th:unless="${esAdmin}" class="text-warning small ms-1">Solo admin</span>
                                             </label>
                                             <fieldset th:disabled="${!esAdmin}">
-                                                <form th:action="@{/modulos/piso/habitaciones/configurar}" method="post">
+                                                <form th:action="@{/piso/habitaciones/configurar}" method="post">
                                                     <div class="input-group input-group-sm">
                                                         <input type="number" class="form-control" name="numHabitaciones"
                                                                th:value="${piso.numHabitaciones}" min="1" placeholder="Nº total">
@@ -325,7 +325,7 @@
             if (!btn) return;
             var id   = btn.getAttribute('data-id');
             var item = document.getElementById('alerta-' + id);
-            go('/modulos/alertas/' + id + '/leer', 'POST')
+            go('/alertas/' + id + '/leer', 'POST')
                 .then(function () {
                     if (item) item.remove();
                     var lista = document.getElementById('lista-alertas');
@@ -419,7 +419,7 @@
             if (btnCompartir) {
                 var nombre  = btnCompartir.dataset.nombre;
                 var codigo  = btnCompartir.dataset.codigo;
-                var enlace  = window.location.origin + '/modulos/piso';
+                var enlace  = window.location.origin + '/piso';
                 var mensaje = 'Únete a SyncFlat. El código de acceso a «' + nombre + '» es: ' + codigo + '. Accede en: ' + enlace;
                 var titulo  = 'Invitación a ' + nombre + ' en SyncFlat';
 

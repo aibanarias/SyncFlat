@@ -5,12 +5,12 @@ Background:
   * callonce read('helpers/login.feature') { username: 'a', password: 'aa' }
 
 Scenario: crear una tarea y verificar que aparece en el listado
-  Given path 'modulos/tareas'
+  Given path 'tareas'
   When method get
   Then status 200
   * def csrfTarea = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/tareas'
+  Given path 'tareas'
   And form field nombre = 'Tarea test Karate'
   And form field descripcion = 'Tarea creada por prueba automatizada'
   And form field tipo = 'PUNTUAL'
@@ -22,12 +22,12 @@ Scenario: crear una tarea y verificar que aparece en el listado
 
 Scenario: completar una tarea vía AJAX devuelve completada=true
   # Asume que la asignación con id=1 existe (import.sql)
-  Given path 'modulos/tareas'
+  Given path 'tareas'
   When method get
   Then status 200
   * def csrfCompletar = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/tareas/1/completar'
+  Given path 'tareas/1/completar'
   And header X-CSRF-TOKEN = csrfCompletar
   And request {}
   When method post

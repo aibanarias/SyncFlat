@@ -36,7 +36,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
  */
 @RequiredArgsConstructor
 @Controller
-@RequestMapping("/modulos/gastos")
+@RequestMapping("/gastos")
 public class GastoController extends BaseController {
 
     private static final Logger log = LogManager.getLogger(GastoController.class);
@@ -77,11 +77,11 @@ public class GastoController extends BaseController {
         if (u == null || piso == null) return "redirect:/login";
         if (errors.hasErrors()) {
             ra.addFlashAttribute("flashError", errors.getAllErrors().get(0).getDefaultMessage());
-            return "redirect:/modulos/gastos";
+            return "redirect:/gastos";
         }
         gastoService.crearGasto(form, u.getId(), piso);
         ra.addFlashAttribute("flashSuccess", "Gasto registrado correctamente.");
-        return "redirect:/modulos/gastos";
+        return "redirect:/gastos";
     }
 
     /**

@@ -14,7 +14,7 @@
 
             <div class="d-flex align-items-center justify-content-between mb-4">
                 <h1 class="mb-0">Gestión de listas y catálogo</h1>
-                <a th:href="@{/modulos/compra}" class="btn btn-outline-secondary btn-sm">← Volver a la compra</a>
+                <a th:href="@{/compra}" class="btn btn-outline-secondary btn-sm">← Volver a la compra</a>
             </div>
             <th:block th:replace="~{fragments/alerts :: alerts}"/>
 
@@ -29,7 +29,7 @@
                     <div class="card mb-4">
                         <div class="card-header fw-semibold">Nueva lista de la compra</div>
                         <div class="card-body">
-                            <form th:action="@{/modulos/compra/lista}" method="post">
+                            <form th:action="@{/compra/lista}" method="post">
 
                                 <div class="mb-3">
                                     <label for="nombreLista" class="form-label">Nombre <span class="text-danger">*</span></label>
@@ -82,7 +82,7 @@
                                 <tbody>
                                     <tr th:each="l : ${listas}">
                                         <td>
-                                            <a th:href="@{/modulos/compra}" th:text="${l.nombre}">Lista</a>
+                                            <a th:href="@{/compra}" th:text="${l.nombre}">Lista</a>
                                         </td>
                                         <td class="text-muted small" th:text="${l.fechaCreacion}">fecha</td>
                                         <td class="small">
@@ -113,7 +113,7 @@
                     <div class="card mb-4">
                         <div class="card-header fw-semibold">Añadir producto al catálogo</div>
                         <div class="card-body">
-                            <form th:action="@{/modulos/compra/producto}" method="post" class="row g-2">
+                            <form th:action="@{/compra/producto}" method="post" class="row g-2">
                                 <div class="col-6">
                                     <label for="nombreProducto" class="form-label">Nombre</label>
                                     <input type="text" class="form-control" id="nombreProducto" name="nombre"

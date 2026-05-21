@@ -18,12 +18,12 @@ Background:
 Scenario: creador de piso obtiene rol ADMIN automáticamente
   # c no tiene piso todavía (import.sql no le asigna ninguno)
   * call read('helpers/login.feature') { username: 'c', password: 'aa' }
-  Given path 'modulos/piso'
+  Given path 'piso'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/piso/crear'
+  Given path 'piso/crear'
   And form field nombre = 'Piso Admin Test'
   And form field direccion = 'Calle Admin 1, Madrid'
   And form field _csrf = csrf
@@ -38,12 +38,12 @@ Scenario: creador de piso obtiene rol ADMIN automáticamente
 # ------------------------------------------------------------------
 Scenario: miembro sin rol ADMIN no puede configurar habitaciones
   * call read('helpers/login.feature') { username: 'b', password: 'aa' }
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/piso/habitaciones/configurar'
+  Given path 'piso/habitaciones/configurar'
   And form field numHabitaciones = '5'
   And form field _csrf = csrf
   When method post
@@ -56,12 +56,12 @@ Scenario: miembro sin rol ADMIN no puede configurar habitaciones
 Scenario: intentar asignar habitación ya ocupada devuelve error claro
   # 'b' tiene la habitación 2 (import.sql); 'a' intenta tomar la 2
   * call read('helpers/login.feature') { username: 'a', password: 'aa' }
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/piso/habitaciones/mi-habitacion'
+  Given path 'piso/habitaciones/mi-habitacion'
   And form field numHabitacion = '2'
   And form field _csrf = csrf
   When method post
@@ -73,12 +73,12 @@ Scenario: intentar asignar habitación ya ocupada devuelve error claro
 # ------------------------------------------------------------------
 Scenario: ADMIN puede promover a un miembro a administrador
   * call read('helpers/login.feature') { username: 'a', password: 'aa' }
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
   # La membresía de 'b' tiene id=2 según import.sql
-  Given path 'modulos/piso/promover-admin'
+  Given path 'piso/promover-admin'
   And form field membresiaId = '2'
   And form field _csrf = csrf
   When method post
@@ -93,12 +93,12 @@ Scenario: ADMIN puede promover a un miembro a administrador
 Scenario: último miembro activo abandona y el piso es eliminado
   # c es el único miembro de 'Piso Admin Test' (creado en escenario 1)
   * call read('helpers/login.feature') { username: 'c', password: 'aa' }
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/piso/abandonar'
+  Given path 'piso/abandonar'
   And form field _csrf = csrf
   When method post
   Then status 200

@@ -19,13 +19,13 @@ Background:
 # ------------------------------------------------------------------
 Scenario: usuario MIEMBRO intenta promover a otro miembro y es rechazado
   * call read('helpers/login.feature') { username: 'c', password: 'aa' }
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
   # c (MIEMBRO) intenta promover la membresía id=1 (usuario a, que es ADMIN)
-  Given path 'modulos/piso/promover-admin'
+  Given path 'piso/promover-admin'
   And form field membresiaId = '1'
   And form field _csrf = csrf
   When method post
@@ -37,12 +37,12 @@ Scenario: usuario MIEMBRO intenta promover a otro miembro y es rechazado
 # ------------------------------------------------------------------
 Scenario: ADMIN intenta promover membresía inexistente y es rechazado
   * call read('helpers/login.feature') { username: 'a', password: 'aa' }
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/piso/promover-admin'
+  Given path 'piso/promover-admin'
   And form field membresiaId = '999999'
   And form field _csrf = csrf
   When method post
@@ -55,12 +55,12 @@ Scenario: ADMIN intenta promover membresía inexistente y es rechazado
 Scenario: ADMIN abandona con otro ADMIN activo y el piso no reasigna nada
   # a abandona; b sigue siendo ADMIN → resultado: ABANDONADO (no REASIGNACION)
   * call read('helpers/login.feature') { username: 'a', password: 'aa' }
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/piso/abandonar'
+  Given path 'piso/abandonar'
   And form field _csrf = csrf
   When method post
   Then status 200
@@ -76,12 +76,12 @@ Scenario: ADMIN abandona con otro ADMIN activo y el piso no reasigna nada
 Scenario: ADMIN intenta promover membresía con fechaSalida ya fijada y es rechazado
   # La membresía de 'a' (id=1) quedó inactiva en el escenario anterior
   * call read('helpers/login.feature') { username: 'b', password: 'aa' }
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/piso/promover-admin'
+  Given path 'piso/promover-admin'
   And form field membresiaId = '1'
   And form field _csrf = csrf
   When method post
@@ -95,12 +95,12 @@ Scenario: único ADMIN abandona y el sistema promueve automáticamente al miembr
   # b es ahora el único ADMIN (a abandonó); c es MIEMBRO
   # Al abandonar b, c queda como único miembro → c es promovido a ADMIN
   * call read('helpers/login.feature') { username: 'b', password: 'aa' }
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/piso/abandonar'
+  Given path 'piso/abandonar'
   And form field _csrf = csrf
   When method post
   Then status 200
@@ -114,7 +114,7 @@ Scenario: único ADMIN abandona y el sistema promueve automáticamente al miembr
 Scenario: verificar que el miembro promovido automáticamente tiene ahora rol ADMIN
   # c debería ser ADMIN tras el escenario anterior
   * call read('helpers/login.feature') { username: 'c', password: 'aa' }
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   And match response contains 'Panel del piso'

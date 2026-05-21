@@ -30,7 +30,7 @@ import jakarta.servlet.http.HttpSession;
  */
 @RequiredArgsConstructor
 @Controller
-@RequestMapping("/modulos/home")
+@RequestMapping("/home")
 public class HomeController extends BaseController {
 
     private static final Logger log = LogManager.getLogger(HomeController.class);
@@ -45,7 +45,7 @@ public class HomeController extends BaseController {
     public String home(Model model, HttpSession session) {
         Piso piso = pisoService.resolverPiso(session);
         if (piso == null) {
-            return "redirect:/modulos/piso";
+            return "redirect:/piso";
         }
         User u = (User) session.getAttribute("u");
 

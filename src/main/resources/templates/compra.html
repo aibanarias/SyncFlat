@@ -13,7 +13,7 @@
         <div class="container mt-4">
             <div class="d-flex align-items-center justify-content-between mb-4">
                 <h1 class="mb-0">Lista de la compra</h1>
-                <a th:if="${piso}" th:href="@{/modulos/compra/gestion}"
+                <a th:if="${piso}" th:href="@{/compra/gestion}"
                    class="btn btn-outline-secondary btn-sm">Gestionar listas y catálogo →</a>
             </div>
 
@@ -36,11 +36,11 @@
                     th:if="${#lists.isEmpty(listasActivas) or #lists.isEmpty(productos)}">
                     <th:block th:if="${#lists.isEmpty(listasActivas)}">
                         No hay listas activas.
-                        <a th:href="@{/modulos/compra/gestion}" class="alert-link">Crea una nueva lista →</a>
+                        <a th:href="@{/compra/gestion}" class="alert-link">Crea una nueva lista →</a>
                     </th:block>
                     <th:block th:if="${not #lists.isEmpty(listasActivas) and #lists.isEmpty(productos)}">
                         El catálogo de productos está vacío.
-                        <a th:href="@{/modulos/compra/gestion}" class="alert-link">Añade productos →</a>
+                        <a th:href="@{/compra/gestion}" class="alert-link">Añade productos →</a>
                     </th:block>
                 </div>
 
@@ -51,7 +51,7 @@
                     th:if="${not #lists.isEmpty(listasActivas) and not #lists.isEmpty(productos)}">
                     <div class="card-header fw-semibold">Añadir producto a una lista</div>
                     <div class="card-body">
-                        <form th:action="@{/modulos/compra/item}" method="post" class="row g-3">
+                        <form th:action="@{/compra/item}" method="post" class="row g-3">
                             <div class="col-md-3">
                                 <label for="listaId" class="form-label">Lista</label>
                                 <select class="form-select" id="listaId" name="listaId" required>
@@ -145,7 +145,7 @@
                             <p class="mb-2 fw-semibold small text-muted">
                                 Cerrar compra: solo los ítems marcados (✓) cuentan en el gasto final
                             </p>
-                            <form th:action="@{/modulos/compra/registrar}" method="post"
+                            <form th:action="@{/compra/registrar}" method="post"
                                   class="row g-2 align-items-end">
                                 <input type="hidden" name="listaId" th:value="${lista.id}">
                                 <div class="col-md-3">
@@ -189,7 +189,7 @@
 
                 <div class="alert alert-light border" th:if="${#lists.isEmpty(listasActivas)}">
                     No hay listas activas. Ve a
-                    <a th:href="@{/modulos/compra/gestion}">Gestión</a>
+                    <a th:href="@{/compra/gestion}">Gestión</a>
                     para crear una nueva.
                 </div>
 
@@ -328,7 +328,7 @@
                 var button = this;
                 var row = button.closest('tr');
 
-                go('/modulos/compra/item/' + id + '/toggle', 'POST')
+                go('/compra/item/' + id + '/toggle', 'POST')
                     .then(function (resp) {
                         var comprado = resp.data.comprado;
                         if (comprado) {

@@ -56,7 +56,7 @@ public class SecurityConfig {
 						.requestMatchers("/css/**", "/js/**", "/img/**", "/webjars/**", "/", "/error").permitAll()
 						.requestMatchers("/autores").permitAll()
 						.requestMatchers("/api/**").permitAll()
-						.requestMatchers("/modulos/**").authenticated()
+						.requestMatchers("/home/**", "/gastos/**", "/tareas/**", "/compra/**", "/calendario/**", "/piso/**", "/alertas/**").authenticated()
 						.requestMatchers("/admin", "/admin/**").hasRole("ADMIN")
 						.requestMatchers("/user/**").hasRole("USER")
 						.anyRequest().authenticated())

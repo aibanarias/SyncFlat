@@ -18,12 +18,12 @@ Background:
 # 1. Registrar una compra sin gasto asociado
 # ------------------------------------------------------------------
 Scenario: registrar compra en lista activa sin gasto
-  Given path 'modulos/compra'
+  Given path 'compra'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/compra/registrar'
+  Given path 'compra/registrar'
   And form field listaId = '1'
   And form field importeTotal = '18.40'
   And form field _csrf = csrf
@@ -35,12 +35,12 @@ Scenario: registrar compra en lista activa sin gasto
 # 2. Registrar una compra con gasto compartido generado automáticamente
 # ------------------------------------------------------------------
 Scenario: registrar compra en lista activa con gasto compartido
-  Given path 'modulos/compra'
+  Given path 'compra'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/compra/registrar'
+  Given path 'compra/registrar'
   And form field listaId = '2'
   And form field importeTotal = '42.00'
   And form field crearGasto = 'true'
@@ -55,12 +55,12 @@ Scenario: registrar compra en lista activa con gasto compartido
 # ------------------------------------------------------------------
 Scenario: error al registrar compra en lista ya completada
   # lista 1 quedó completada en el escenario 1
-  Given path 'modulos/compra'
+  Given path 'compra'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/compra/registrar'
+  Given path 'compra/registrar'
   And form field listaId = '1'
   And form field importeTotal = '10.00'
   And form field _csrf = csrf
@@ -74,12 +74,12 @@ Scenario: error al registrar compra en lista ya completada
 # ------------------------------------------------------------------
 Scenario: toggle en lista cerrada devuelve error 400
   # item 1 pertenece a lista 1, que quedó completada en el escenario 1
-  Given path 'modulos/compra'
+  Given path 'compra'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/compra/item/1/toggle'
+  Given path 'compra/item/1/toggle'
   And header X-CSRF-TOKEN = csrf
   And request {}
   When method post

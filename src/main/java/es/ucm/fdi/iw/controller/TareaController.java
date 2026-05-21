@@ -37,7 +37,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
  */
 @RequiredArgsConstructor
 @Controller
-@RequestMapping("/modulos/tareas")
+@RequestMapping("/tareas")
 public class TareaController extends BaseController {
 
     private static final Logger log = LogManager.getLogger(TareaController.class);
@@ -76,11 +76,11 @@ public class TareaController extends BaseController {
         if (u == null || piso == null) return "redirect:/login";
         if (errors.hasErrors()) {
             ra.addFlashAttribute("flashError", errors.getAllErrors().get(0).getDefaultMessage());
-            return "redirect:/modulos/tareas";
+            return "redirect:/tareas";
         }
         tareaService.crearTarea(form, piso);
         ra.addFlashAttribute("flashSuccess", "Tarea creada correctamente.");
-        return "redirect:/modulos/tareas";
+        return "redirect:/tareas";
     }
 
     /**

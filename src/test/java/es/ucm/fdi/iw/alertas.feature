@@ -16,7 +16,7 @@ Background:
 # 1. Home muestra alertas no leídas
 # ------------------------------------------------------------------
 Scenario: home muestra la sección de alertas
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   And match response contains 'Alertas'
@@ -25,12 +25,12 @@ Scenario: home muestra la sección de alertas
 # 2. Marcar una alerta como leída devuelve ok=true
 # ------------------------------------------------------------------
 Scenario: marcar una alerta como leída vía AJAX
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/alertas/1/leer'
+  Given path 'alertas/1/leer'
   And header X-CSRF-TOKEN = csrf
   And request {}
   When method post
@@ -41,12 +41,12 @@ Scenario: marcar una alerta como leída vía AJAX
 # 3. No se puede volver a marcar una alerta ya leída
 # ------------------------------------------------------------------
 Scenario: marcar dos veces la misma alerta devuelve error
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/alertas/1/leer'
+  Given path 'alertas/1/leer'
   And header X-CSRF-TOKEN = csrf
   And request {}
   When method post
@@ -57,12 +57,12 @@ Scenario: marcar dos veces la misma alerta devuelve error
 # 4. Marcar todas las alertas pendientes
 # ------------------------------------------------------------------
 Scenario: marcar todas las alertas como leídas
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/alertas/leer-todas'
+  Given path 'alertas/leer-todas'
   And form field _csrf = csrf
   When method post
   Then status 200

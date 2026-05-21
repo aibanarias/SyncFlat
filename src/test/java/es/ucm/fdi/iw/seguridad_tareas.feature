@@ -20,12 +20,12 @@ Background:
 # ------------------------------------------------------------------
 Scenario: usuario de Piso 2 no puede completar asignación de Piso 1
   # 'd' pertenece a Piso 2; la asignacion id=1 pertenece a Piso 1 → 403
-  Given path 'modulos/tareas'
+  Given path 'tareas'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/tareas/1/completar'
+  Given path 'tareas/1/completar'
   And header X-CSRF-TOKEN = csrf
   And request {}
   When method post
@@ -38,12 +38,12 @@ Scenario: usuario de Piso 2 no puede completar asignación de Piso 1
 Scenario: usuario de Piso 2 no puede validar asignación de Piso 1
   # El guard de piso se ejecuta antes de la comprobación de estado (PENDIENTE),
   # por lo que la respuesta es 403 y no 400 por 'debe completarse antes'.
-  Given path 'modulos/tareas'
+  Given path 'tareas'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/tareas/1/validar'
+  Given path 'tareas/1/validar'
   And header X-CSRF-TOKEN = csrf
   And request {}
   When method post

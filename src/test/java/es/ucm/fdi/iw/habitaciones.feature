@@ -9,12 +9,12 @@ Background:
   * callonce read('helpers/login.feature') { username: 'a', password: 'aa' }
 
 Scenario: usuario puede actualizar su número de habitación
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/piso/habitaciones/mi-habitacion'
+  Given path 'piso/habitaciones/mi-habitacion'
   And form field numHabitacion = '3'
   And form field _csrf = csrf
   When method post
@@ -23,12 +23,12 @@ Scenario: usuario puede actualizar su número de habitación
 
 Scenario: número de habitación fuera del rango del piso muestra error
   # El piso tiene 3 habitaciones; pedir la 99 debe rechazarse
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/piso/habitaciones/mi-habitacion'
+  Given path 'piso/habitaciones/mi-habitacion'
   And form field numHabitacion = '99'
   And form field _csrf = csrf
   When method post
@@ -36,12 +36,12 @@ Scenario: número de habitación fuera del rango del piso muestra error
   And match response contains 'no puede superar'
 
 Scenario: configurar número total de habitaciones del piso
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/piso/habitaciones/configurar'
+  Given path 'piso/habitaciones/configurar'
   And form field numHabitaciones = '4'
   And form field _csrf = csrf
   When method post
@@ -49,12 +49,12 @@ Scenario: configurar número total de habitaciones del piso
   And match response contains 'Panel del piso'
 
 Scenario: configurar 0 habitaciones falla la validación del formulario
-  Given path 'modulos/home'
+  Given path 'home'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/piso/habitaciones/configurar'
+  Given path 'piso/habitaciones/configurar'
   And form field numHabitaciones = '0'
   And form field _csrf = csrf
   When method post

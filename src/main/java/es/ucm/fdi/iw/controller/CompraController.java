@@ -37,7 +37,7 @@ import java.util.Map;
  */
 @RequiredArgsConstructor
 @Controller
-@RequestMapping("/modulos/compra")
+@RequestMapping("/compra")
 public class CompraController extends BaseController {
 
     private static final Logger log = LogManager.getLogger(CompraController.class);
@@ -82,11 +82,11 @@ public class CompraController extends BaseController {
         if (u == null || piso == null) return "redirect:/login";
         if (errors.hasErrors()) {
             ra.addFlashAttribute("flashError", errors.getAllErrors().get(0).getDefaultMessage());
-            return "redirect:/modulos/compra/gestion";
+            return "redirect:/compra/gestion";
         }
         compraService.crearLista(form, piso);
         ra.addFlashAttribute("flashSuccess", "Lista creada correctamente.");
-        return "redirect:/modulos/compra/gestion";
+        return "redirect:/compra/gestion";
     }
 
     @PostMapping("/producto")
@@ -97,11 +97,11 @@ public class CompraController extends BaseController {
         if (u == null || piso == null) return "redirect:/login";
         if (errors.hasErrors()) {
             ra.addFlashAttribute("flashError", errors.getAllErrors().get(0).getDefaultMessage());
-            return "redirect:/modulos/compra/gestion";
+            return "redirect:/compra/gestion";
         }
         compraService.crearProducto(form, piso);
         ra.addFlashAttribute("flashSuccess", "Producto añadido al catálogo.");
-        return "redirect:/modulos/compra/gestion";
+        return "redirect:/compra/gestion";
     }
 
     @PostMapping("/item")
@@ -111,7 +111,7 @@ public class CompraController extends BaseController {
         if (u == null) return "redirect:/login";
         if (errors.hasErrors()) {
             ra.addFlashAttribute("flashError", errors.getAllErrors().get(0).getDefaultMessage());
-            return "redirect:/modulos/compra";
+            return "redirect:/compra";
         }
         try {
             compraService.crearItem(form, u.getId());
@@ -120,7 +120,7 @@ public class CompraController extends BaseController {
             log.warn("crearItem: {}", e.getMessage());
             ra.addFlashAttribute("flashError", e.getMessage());
         }
-        return "redirect:/modulos/compra";
+        return "redirect:/compra";
     }
 
     /**
@@ -152,7 +152,7 @@ public class CompraController extends BaseController {
         if (u == null || piso == null) return "redirect:/login";
         if (errors.hasErrors()) {
             ra.addFlashAttribute("flashError", errors.getAllErrors().get(0).getDefaultMessage());
-            return "redirect:/modulos/compra";
+            return "redirect:/compra";
         }
         try {
             compraService.registrarCompra(form, u, piso);
@@ -162,6 +162,6 @@ public class CompraController extends BaseController {
             log.warn("registrarCompra: {}", e.getMessage());
             ra.addFlashAttribute("flashError", e.getMessage());
         }
-        return "redirect:/modulos/compra";
+        return "redirect:/compra";
     }
 }

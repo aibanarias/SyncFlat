@@ -85,7 +85,7 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
         .getResultList();
     session.setAttribute("topics", String.join(",", topics));
 
-    String nextUrl = u.hasRole(User.Role.ADMIN) ? "admin/" : "modulos/home";
+    String nextUrl = u.hasRole(User.Role.ADMIN) ? "admin/" : "home";
 
     log.info("LOG IN: {} (id {}) -- session is {}, websocket is {} -- redirected to {}",
         u.getUsername(), u.getId(), session.getId(), ws, nextUrl);

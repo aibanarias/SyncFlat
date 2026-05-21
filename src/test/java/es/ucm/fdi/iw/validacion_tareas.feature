@@ -16,12 +16,12 @@ Background:
 Scenario: el usuario asignado no puede validar su propia tarea
   # 'b' (user_id=2) es el asignado de asignacion id=1 → autovalidación prohibida
   * call read('helpers/login.feature') { username: 'b', password: 'aa' }
-  Given path 'modulos/tareas'
+  Given path 'tareas'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/tareas/1/validar'
+  Given path 'tareas/1/validar'
   And header X-CSRF-TOKEN = csrf
   And request {}
   When method post
@@ -35,12 +35,12 @@ Scenario: el usuario asignado no puede validar su propia tarea
 Scenario: otro miembro puede validar la tarea completada por el asignado
   # 'a' (user_id=1) no es el asignado de asignacion id=1 → puede validar
   * call read('helpers/login.feature') { username: 'a', password: 'aa' }
-  Given path 'modulos/tareas'
+  Given path 'tareas'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/tareas/1/validar'
+  Given path 'tareas/1/validar'
   And header X-CSRF-TOKEN = csrf
   And request {}
   When method post
@@ -53,12 +53,12 @@ Scenario: otro miembro puede validar la tarea completada por el asignado
 Scenario: no se puede reabrir una tarea ya validada
   # asignacion id=1 está VALIDADA tras el escenario anterior
   * call read('helpers/login.feature') { username: 'a', password: 'aa' }
-  Given path 'modulos/tareas'
+  Given path 'tareas'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/tareas/1/completar'
+  Given path 'tareas/1/completar'
   And header X-CSRF-TOKEN = csrf
   And request {}
   When method post
@@ -72,12 +72,12 @@ Scenario: no se puede reabrir una tarea ya validada
 Scenario: no se puede volver a validar una tarea ya validada
   # asignacion id=1 sigue VALIDADA
   * call read('helpers/login.feature') { username: 'b', password: 'aa' }
-  Given path 'modulos/tareas'
+  Given path 'tareas'
   When method get
   Then status 200
   * def csrf = karate.extract(response, 'name="_csrf" value="([^"]*)"', 1)
 
-  Given path 'modulos/tareas/1/validar'
+  Given path 'tareas/1/validar'
   And header X-CSRF-TOKEN = csrf
   And request {}
   When method post

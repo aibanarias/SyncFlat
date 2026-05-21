@@ -353,7 +353,7 @@
                     <h5 class="modal-title" id="modal-gasto-label">Registrar nuevo gasto</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form th:action="@{/modulos/gastos}" method="post">
+                <form th:action="@{/gastos}" method="post">
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="concepto" class="form-label">Concepto <span class="text-danger">*</span></label>
@@ -406,7 +406,7 @@
             btn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 this.disabled = true;
-                go('/modulos/gastos/participante/' + this.dataset.pgId + '/pagar', 'POST')
+                go('/gastos/participante/' + this.dataset.pgId + '/pagar', 'POST')
                     .then(function () { location.reload(); })
                     .catch(function (err) { btn.disabled = false; console.error(err); });
             });
