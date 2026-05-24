@@ -232,11 +232,13 @@ public class CompraService {
      * @throws IllegalStateException    si la lista ya está completada
      */
     @Transactional
-    public void crearItem(ItemForm form, long solicitadoPorId) {
+    public void crearItem(ItemForm form, long solicitadoPorId, long pisoId) {
         ListaCompra lista = entityManager.find(ListaCompra.class, form.getListaId());
         Producto producto = entityManager.find(Producto.class, form.getProductoId());
         if (lista == null || producto == null)
             throw new IllegalArgumentException("lista o producto no encontrado");
+        if (lista.getPiso().getId() != pisoId || producto.getPiso().getId() != pisoId)
+            throw new SecurityException("La lista o el producto no pertenecen a tu piso.");
         if (lista.isCompletada())
             throw new IllegalStateException("No se pueden añadir ítems a una lista ya registrada.");
 
@@ -262,9 +264,11 @@ public class CompraService {
      * @throws IllegalStateException    si la lista del ítem ya está cerrada
      */
     @Transactional
-    public boolean toggleItem(long itemId) {
+    public boolean toggleItem(long itemId, long pisoId) {
         ItemListaCompra item = entityManager.find(ItemListaCompra.class, itemId);
         if (item == null) throw new IllegalArgumentException("item no encontrado");
+        if (item.getLista().getPiso().getId() != pisoId)
+            throw new SecurityException("El ítem no pertenece a tu piso.");
         if (item.getLista().isCompletada())
             throw new IllegalStateException("No se puede modificar un ítem de una lista ya cerrada.");
         item.setComprado(!item.isComprado());

@@ -208,11 +208,18 @@ Los siguientes recursos son externos a la plantilla de la asignatura:
 
 ## Uso de inteligencia artificial
 
-Se ha utilizado **Claude Sonnet 4.6** (Anthropic) como herramienta de apoyo en varias fases del desarrollo:
+Se ha utilizado **Claude Sonnet 4.6** (Anthropic) como herramienta de apoyo a lo largo del desarrollo. El uso ha sido frecuente pero siempre instrumental: el diseño del modelo de datos, la arquitectura de capas, la lógica de negocio y las decisiones estructurales son propias; la IA se ha usado para acelerar trabajo repetitivo, revisar código ya escrito y generar fragmentos a partir de especificaciones concretas.
 
-- **Documentación:** generación de Javadoc, ayuda para generación de partes del README.
-- **Tests:** ayuda para completar la suite Karate, especialmente en los escenarios de seguridad y flujos más complejos (sucesión de administrador, recurrencia de tareas, acceso cross-piso).
-- **Repetición de patrones:** generación de formularios con estructura similar a los ya existentes.
+Se estima que aproximadamente el **30–35 % del código** presente en el repositorio tiene algún grado de asistencia de IA, entendiendo como tal desde generación completa de fragmentos rutinarios hasta sugerencias parciales que luego se ajustaron. El resto se escribió, modificó y mantuvo manualmente. El código generado se revisó, integró y en muchos casos se modificó antes de considerarlo correcto.
+
+Las áreas donde la IA aportó más:
+
+- **Documentación:** generación de Javadoc en las clases del modelo y los servicios, redacción de partes del README y del documento de diseño del modelo de datos (`datadoc.md`).
+- **Tests:** ayuda para completar la suite Karate interna (escenarios de seguridad, flujos de validación de tareas, recurrencia, sucesión de administrador, acceso cross-piso) y para diseñar y depurar los tests externos con driver de navegador (`navegacion.feature`, `ws.feature`), incluyendo la resolución de problemas específicos como el orden de los formularios en el DOM.
+- **Patrones repetitivos:** generación de fragmentos de formularios Thymeleaf con estructura similar a los ya existentes, controladores secundarios a partir de la plantilla de uno ya implementado, y fragmentos de consultas JPQL.
+- **Refactors y revisión:** apoyo en la extracción de lógica a clases de servicio, revisión de cobertura de seguridad en los endpoints, y detección de inconsistencias entre controladores.
+
+En todos los casos, el estudiante puede explicar, modificar y ampliar el código sin asistencia externa.
 
 
 ---
@@ -228,6 +235,8 @@ mvn test
 `PruebaTest` arranca el servidor embebido en un puerto aleatorio y pasa el puerto a Karate mediante una propiedad de sistema. No es necesario levantar el servidor manualmente.
 
 **Resultado:** 64 escenarios en 16 ficheros `.feature`, todos en verde.
+
+### Tests internos (API HTTP)
 
 | Feature | Qué cubre |
 |---------|-----------|
@@ -247,6 +256,16 @@ mvn test
 | `alertas.feature` | Creación y lectura de alertas del piso |
 | `admin.feature` | Panel ADMIN, toggle habilitado/deshabilitado |
 | `z_sucesion_admin.feature` | Transferencia de administrador al abandonar el piso |
+
+### Tests externos (navegador, Chrome DevTools Protocol)
+
+`ExternalRunner` lanza Chrome en modo incógnito y ejecuta flujos completos de UI. Los escenarios generan sus propios datos con nombres únicos (`Date.now()`) y no dependen de contenido preexistente en la base de datos.
+
+| Feature | Qué cubre |
+|---------|-----------|
+| `login.feature` | Credenciales incorrectas, login como admin y como miembro, logout |
+| `ws.feature` | Envío y recepción de mensaje directo en tiempo real (WebSocket/STOMP) |
+| `navegacion.feature` | Ciclos crear→verificar→eliminar: tarea puntual, gasto compartido y bloque horario (ciclo completo con DELETE) |
 
 ---
 

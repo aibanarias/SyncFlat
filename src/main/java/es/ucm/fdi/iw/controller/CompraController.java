@@ -108,13 +108,14 @@ public class CompraController extends BaseController {
     public String crearItem(@Valid @ModelAttribute ItemForm form, BindingResult errors,
             HttpSession session, RedirectAttributes ra) {
         User u = (User) session.getAttribute("u");
-        if (u == null) return "redirect:/login";
+        Piso piso = pisoService.resolverPiso(session);
+        if (u == null || piso == null) return "redirect:/login";
         if (errors.hasErrors()) {
             ra.addFlashAttribute("flashError", errors.getAllErrors().get(0).getDefaultMessage());
             return "redirect:/compra";
         }
         try {
-            compraService.crearItem(form, u.getId());
+            compraService.crearItem(form, u.getId(), piso.getId());
             ra.addFlashAttribute("flashSuccess", "Producto añadido a la lista.");
         } catch (IllegalArgumentException | IllegalStateException e) {
             log.warn("crearItem: {}", e.getMessage());
@@ -132,10 +133,10 @@ public class CompraController extends BaseController {
     @ResponseBody
     public ResponseEntity<ApiResponse<?>> toggleItem(
             @PathVariable long id, HttpSession session) {
-        User u = (User) session.getAttribute("u");
-        if (u == null)
+        Piso piso = pisoService.resolverPiso(session);
+        if (piso == null)
             return ResponseEntity.status(401).body(ApiResponse.error("no autorizado"));
-        boolean comprado = compraService.toggleItem(id);
+        boolean comprado = compraService.toggleItem(id, piso.getId());
         return ResponseEntity.ok(ApiResponse.ok(Map.of("comprado", comprado)));
     }
 
